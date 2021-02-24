@@ -1,0 +1,12 @@
+def print_strings(map):
+    for key in indexer(map):
+        println(s)
+    end
+end
+
+map = {}
+for s in args:
+    map[s] = True
+end
+
+print_strings(map)

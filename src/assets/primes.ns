@@ -1,0 +1,22 @@
+def primes(n) :
+    primes = [:n]
+    idx = 1
+    pr = True
+
+    for i in range(n) :
+        for j in range(i) :
+            if idx % primes[j] == 0 :
+                pr = False
+            end
+        end
+        if pr :
+            primes[i] = idx
+        end
+        idx = idx + 1
+        pr = True
+    end
+
+    return primes
+end
+
+print(primes(int(args[0])))

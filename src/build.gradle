@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+}
+
+repositories {
+    // Use JCenter for resolving dependencies.
+    jcenter()
+}
+
+dependencies {
+    // Use TestNG framework, also requires calling test.useTestNG() below
+    testImplementation 'org.testng:testng:7.3.0'
+
+    implementation 'com.norswap:utils:2.1.2'
+    implementation 'com.norswap:autumn:1.0.6'
+    implementation 'com.norswap:uranium:1.0.3-ALPHA'
+}
+
+tasks.named('test') {
+    // Use TestNG for unit tests.
+    enableAssertions = true
+    useTestNG()
+}

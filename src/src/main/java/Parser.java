@@ -9,11 +9,10 @@ import ast.*;
 
 public final class Parser extends Grammar {
 
-
     // Lexer
-
-    public rule TRUE = reserved("True").as_val(new BoolNode(true));
-    public rule FALSE = reserved("False").as_val(new BoolNode(false));
+    // TODO : using reserved makes the whole thing broken
+    // public rule TRUE = reserved("True").as_val(new BoolNode(true));
+    // public rule FALSE = reserved("False").as_val(new BoolNode(false));
 
     // Comments
     public rule not_line = seq(str("\n").not(), any);
@@ -43,7 +42,7 @@ public final class Parser extends Grammar {
 
     //
     public rule numerical_value = choice(integer, variable_name);
-    public rule expression = lazy(() -> choice(this.operation, string, this.comparison)); // TODO: add array and map
+    public rule expression = lazy(() -> choice(this.operation, string, this.bool)); // TODO: add array and map
 
     // Multiplication, Division and modulo
     public rule multiplication = left_expression()
@@ -62,22 +61,22 @@ public final class Parser extends Grammar {
             .requireOperator()
             .word();
 
+    // Operations on numerical values
+    public rule operation = choice(addition, multiplication, numerical_value);
+
     // Booleans
     public rule comparator = choice(seq(choice(set("!=")), "="), seq(choice(set("<>")), opt("=")))
             .word()
             .push(ActionContext::str);
 
-    public rule comparison = lazy(() -> seq(expression,
+    public rule comparison = seq(operation,
             comparator,
-            expression))
+            operation)
             .word()
             .push($ -> new BoolNode($.$1(), $.$0(), $.$2()));
 
-    public rule bool = choice(TRUE, FALSE, comparison);
+    public rule bool = choice(comparison); // TODO : add True and False as reserved words
 
-
-    // Operations on numerical values
-    public rule operation = choice(addition, multiplication, numerical_value);
 
     // TODO : array and map declarations
 
@@ -90,7 +89,10 @@ public final class Parser extends Grammar {
 
     // if
 
-    public rule root = seq(ws, alphanum).at_least(0);
+
+    public rule statement = choice(variable_assignment);
+
+    public rule root = choice(expression, statement);
 
     @Override
     public rule root() {

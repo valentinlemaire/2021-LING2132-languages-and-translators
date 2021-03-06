@@ -14,6 +14,13 @@ public final class Parser extends Grammar {
     // public rule TRUE = reserved("True").as_val(new BoolNode(true));
     // public rule FALSE = reserved("False").as_val(new BoolNode(false));
 
+    public rule EQ  = word("==");
+    public rule LEQ = word("<=");
+    public rule GEQ = word(">=");
+    public rule NEQ = word("!=");
+    public rule L   = word("<");
+    public rule G   = word(">");
+
     // Comments
     public rule not_line = seq(str("\n").not(), any);
     public rule line_comment = seq("#", not_line.at_least(0), str("\n").opt());
@@ -40,45 +47,60 @@ public final class Parser extends Grammar {
             .word()
             .push($ -> new IntegerNode(Integer.parseInt($.str().replace(" ", ""))));
 
-    //
+    // Regrouping numerical values
     public rule numerical_value = choice(integer, variable_name);
-    public rule expression = lazy(() -> choice(this.operation, string, this.bool)); // TODO: add array and map
 
     // Multiplication, Division and modulo
-    public rule multiplication = left_expression()
-            .operand(numerical_value)
+    public rule multiplication = lazy(() -> left_expression()
+            .operand(choice(this.bracketed_operation, numerical_value))
             .infix(word("*"), $ -> new MultNode($.$0(), $.$1()))
-            .infix(word("/"), $ -> new DivNode($.$0(), $.$1()))
-            .infix(word("%"), $ -> new ModNode($.$0(), $.$1()))
-            .requireOperator()
+            .infix(word("/"), $ -> new DivNode ($.$0(), $.$1()))
+            .infix(word("%"), $ -> new ModNode ($.$0(), $.$1()))
+            .requireOperator())
             .word();
 
     // Addition and Subtraction
-    public rule addition = left_expression()
-            .operand(choice(multiplication, numerical_value))
+    public rule addition = lazy(() -> left_expression()
+            .operand(choice(this.bracketed_operation, multiplication, numerical_value))
             .infix(word("+"), $ -> new AddNode($.$0(), $.$1()))
             .infix(word("-"), $ -> new SubNode($.$0(), $.$1()))
-            .requireOperator()
+            .requireOperator())
             .word();
 
     // Operations on numerical values
-    public rule operation = choice(addition, multiplication, numerical_value);
+    public rule unbracketed_operation = choice(addition, multiplication, numerical_value);
+
+    public rule bracketed_operation = lazy(() -> seq(word("("), this.operation, word(")")));
+
+    public rule operation = lazy(() -> choice(bracketed_operation, unbracketed_operation));
 
     // Booleans
-    public rule comparator = choice(seq(choice(set("!=")), "="), seq(choice(set("<>")), opt("=")))
-            .word()
-            .push(ActionContext::str);
+    public rule unbracketed_comparison = lazy(() -> left_expression()
+            .operand(choice(operation, this.bracketed_comparison))
+            .infix(EQ,  $ -> new BoolNode(BoolNode.EQ,  $.$0(), $.$1()))
+            .infix(LEQ, $ -> new BoolNode(BoolNode.LEQ, $.$0(), $.$1()))
+            .infix(GEQ, $ -> new BoolNode(BoolNode.GEQ, $.$0(), $.$1()))
+            .infix(NEQ, $ -> new BoolNode(BoolNode.NEQ, $.$0(), $.$1()))
+            .infix(L,   $ -> new BoolNode(BoolNode.L,   $.$0(), $.$1()))
+            .infix(G,   $ -> new BoolNode(BoolNode.G,   $.$0(), $.$1()))
+            .requireOperator())
+            .word();
 
-    public rule comparison = seq(operation,
-            comparator,
-            operation)
-            .word()
-            .push($ -> new BoolNode($.$1(), $.$0(), $.$2()));
+    public rule bracketed_comparison = lazy(() -> seq(word("("), this.comparison, word(")")));
 
-    public rule bool = choice(comparison); // TODO : add True and False as reserved words
+    public rule comparison = choice(bracketed_comparison, unbracketed_comparison);
 
+    public rule bool = lazy(() -> choice(comparison)); // TODO add true and false
 
-    // TODO : array and map declarations
+    // Array declaration
+    // TODO
+
+    // Map declaration
+    // TODO
+
+    // Regrouping expressions
+    public rule expression = choice(operation, string, bool); // TODO: add array and map
+
 
     // STATEMENTS
 
@@ -88,6 +110,42 @@ public final class Parser extends Grammar {
                                         .push($ -> new VariableAssignmentNode($.$0(), $.$1()));
 
     // if
+    // TODO
+
+    // while
+    // TODO
+
+    // for (EXTRA)
+    // TODO
+
+    // Function definition
+    // TODO
+
+    // SPECIAL FUNCTIONS AND OBJECT ACCESSES
+
+    // Array access
+    // TODO
+
+    // Map access
+    // TODO
+
+    // print
+    // TODO
+
+    // Program arguments
+    // TODO
+
+    // Parsing strings into integers
+    // TODO
+
+    // EXTRAS
+    // range function
+    // TODO
+
+    // indexer function (for map)
+    // TODO
+
+
 
 
     public rule statement = choice(variable_assignment);

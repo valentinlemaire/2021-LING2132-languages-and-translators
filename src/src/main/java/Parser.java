@@ -9,18 +9,6 @@ import ast.*;
 
 public final class Parser extends Grammar {
 
-    // Lexer
-    // TODO : using reserved makes the whole thing broken
-    // public rule TRUE = reserved("True").as_val(new BoolNode(true));
-    // public rule FALSE = reserved("False").as_val(new BoolNode(false));
-
-    public rule EQ  = word("==");
-    public rule LEQ = word("<=");
-    public rule GEQ = word(">=");
-    public rule NEQ = word("!=");
-    public rule L   = word("<");
-    public rule G   = word(">");
-
     // Comments
     public rule not_line = seq(str("\n").not(), any);
     public rule line_comment = seq("#", not_line.at_least(0), str("\n").opt());
@@ -29,30 +17,72 @@ public final class Parser extends Grammar {
 
     // EXPRESSIONS
 
-    // Variables
-    public rule variable_literal = seq(choice(alpha, "_"), choice(alphanum, "_").at_least(0))
-            .word()
-            .push($ -> $.str());
+    // Variable name parts (needs to be initialized here for lexer)
 
-    public rule variable_name = seq(opt("-").word(), variable_literal)
-            .word()
-            .push($ -> $.$list().size() == 2 ? new VariableNode($.$1(), ((String) $.$0()).replace(" ", "")) : new VariableNode($.$0(), "+"));
+    public rule id_start = choice(alpha, "_");
+    { id_part = choice(alphanum, "_"); }
+
+    // Lexer
+
+    public rule TRUE    = reserved("True").as_val(new BoolNode(true));
+    public rule FALSE   = reserved("False").as_val(new BoolNode(false));
+    public rule NONE    = reserved("None").as_val(new NoneNode());
+
+    public rule FOR     = reserved("for");
+    public rule WHILE   = reserved("while");
+    public rule IF      = reserved("if");
+    public rule ELSE    = reserved("else");
+    public rule DEF     = reserved("def");
+    public rule END     = reserved("end");
+    public rule PRINT   = reserved("print");
+    public rule PRINTLN = reserved("println");
+    public rule RANGE   = reserved("range");
+    public rule INDEXER = reserved("indexer");
+    public rule RETURN  = reserved("return");
+    public rule SORT    = reserved("sort");
+    public rule ARGS    = reserved("args");
+    public rule NOT     = reserved("not");
+    public rule AND     = reserved("and");
+    public rule OR      = reserved("or");
+
+    // VALUES
+
+    // Variable names
+    public rule identifier = identifier(seq(id_start, id_part.at_least(0)))
+                                    .push($ -> new IdentifierNode($.str()));
+
 
     // Strings
-    public rule not_quote = seq(str("\"").not(), any).at_least(0).push($ -> $.str());
+    public rule not_quote = seq(str("\"").not(), any).at_least(0).push(ActionContext::str);
     public rule string = choice(seq('"', not_quote, '"')).word().push($ -> new StringNode($.$0()));
 
     // Integers
-    public rule integer = seq(opt("-"), digit.at_least(1), not(variable_name))
+    public rule integer = seq(opt("-"), digit.at_least(1), not(identifier))
             .word()
-            .push($ -> new IntegerNode(Integer.parseInt($.str().replace(" ", ""))));
+            .push($ -> new IntegerNode(Integer.parseInt($.str())));
 
-    // Regrouping numerical values
-    public rule numerical_value = choice(integer, variable_name);
+    // Basic boolean values
+    public rule boolean_values = choice(TRUE, FALSE);
 
-    // Multiplication, Division and modulo
+    // Array and map access (TODO double array indexing not supported : a[1][2])
+    public rule indexer_access = lazy(() -> seq(identifier, word("["), this.expression ,word("]")))
+                                .push($ -> new IndexerAccessNode($.$0(), $.$1()));
+
+    // Function calls
+    public rule function_args = lazy(() -> seq(this.expression, seq(word(","), this.expression).at_least(0)))
+                                .push(ActionContext::$list);
+
+    public rule function_call = lazy(() -> seq(identifier, word("("), function_args.or_push_null(), word(")")))
+                                .push($ -> new FunctionCallNode($.$0(), $.$1()));
+
+    public rule any_value = choice(indexer_access, function_call, identifier);
+
+
+    // NUMERICAL OPERATIONS
+
+    // Multiplication, Division and Modulo
     public rule multiplication = lazy(() -> left_expression()
-            .operand(choice(this.bracketed_operation, numerical_value))
+            .operand(this.numerical_operator)
             .infix(word("*"), $ -> new MultNode($.$0(), $.$1()))
             .infix(word("/"), $ -> new DivNode ($.$0(), $.$1()))
             .infix(word("%"), $ -> new ModNode ($.$0(), $.$1()))
@@ -61,36 +91,70 @@ public final class Parser extends Grammar {
 
     // Addition and Subtraction
     public rule addition = lazy(() -> left_expression()
-            .operand(choice(this.bracketed_operation, multiplication, numerical_value))
+            .operand(choice(multiplication, this.numerical_operator))
             .infix(word("+"), $ -> new AddNode($.$0(), $.$1()))
             .infix(word("-"), $ -> new SubNode($.$0(), $.$1()))
             .requireOperator())
             .word();
 
-    // Operations on numerical values
-    public rule unbracketed_operation = choice(addition, multiplication, numerical_value);
 
-    public rule bracketed_operation = lazy(() -> seq(word("("), this.operation, word(")")));
+    // Basic operands without operations or brackets
+    public rule primary_numerical_operator = lazy(() -> choice(addition, multiplication, this.numerical_negation, integer, any_value));
 
-    public rule operation = lazy(() -> choice(bracketed_operation, unbracketed_operation));
+    // Handling of brackets
+    public rule bracketed_primary_numerical_operator = lazy(() -> seq(word("("), this.numerical_operation, word(")")));
 
-    // Booleans
-    public rule unbracketed_comparison = lazy(() -> left_expression()
-            .operand(choice(operation, this.bracketed_comparison))
-            .infix(EQ,  $ -> new BoolNode(BoolNode.EQ,  $.$0(), $.$1()))
-            .infix(LEQ, $ -> new BoolNode(BoolNode.LEQ, $.$0(), $.$1()))
-            .infix(GEQ, $ -> new BoolNode(BoolNode.GEQ, $.$0(), $.$1()))
-            .infix(NEQ, $ -> new BoolNode(BoolNode.NEQ, $.$0(), $.$1()))
-            .infix(L,   $ -> new BoolNode(BoolNode.L,   $.$0(), $.$1()))
-            .infix(G,   $ -> new BoolNode(BoolNode.G,   $.$0(), $.$1()))
+    // Used inside numerical operations
+    public rule numerical_operator = lazy(() -> choice(bracketed_primary_numerical_operator, integer, any_value));
+
+    // Negation
+    public rule numerical_negation = seq(word("-"), numerical_operator)
+                                        .push($ -> new NegationNode($.$0()));
+
+    // Final numerical operation
+    public rule numerical_operation = choice(primary_numerical_operator, bracketed_primary_numerical_operator);
+
+    // BOOLEAN OPERATIONS
+
+    // Value comparison
+    public rule comparison = lazy(() -> left_expression()
+            .operand(choice(numerical_operation, this.bool_operator))
+            .infix(word("<"),  $ -> new ComparisonNode(ComparisonNode.L,   $.$0(), $.$1()))
+            .infix(word(">"),  $ -> new ComparisonNode(ComparisonNode.G,   $.$0(), $.$1()))
+            .infix(word("=="), $ -> new ComparisonNode(ComparisonNode.EQ,  $.$0(), $.$1()))
+            .infix(word("<="), $ -> new ComparisonNode(ComparisonNode.LEQ, $.$0(), $.$1()))
+            .infix(word(">="), $ -> new ComparisonNode(ComparisonNode.GEQ, $.$0(), $.$1()))
+            .infix(word("!="), $ -> new ComparisonNode(ComparisonNode.NEQ, $.$0(), $.$1()))
             .requireOperator())
             .word();
 
-    public rule bracketed_comparison = lazy(() -> seq(word("("), this.comparison, word(")")));
 
-    public rule comparison = choice(bracketed_comparison, unbracketed_comparison);
+    // Logical operations
+    public rule logical_operation = lazy(() -> left_expression()
+            .operand(this.bool_operator)
+            .infix(AND, $ -> new AndNode($.$0(), $.$1()))
+            .infix(OR,  $ -> new OrNode ($.$0(), $.$1()))
+            .requireOperator())
+            .word();
 
-    public rule bool = lazy(() -> choice(comparison)); // TODO add true and false
+    // Basic operands without operations and brackets
+    public rule primary_bool_operator = lazy(() -> choice(comparison, logical_operation, this.logical_negation, boolean_values, any_value));
+
+    // Handling of brackets
+    public rule bracketed_primary_bool_operator = lazy(() -> seq(word("("), this.bool, word(")")));
+
+    // Used inside boolean operations
+    public rule bool_operator = lazy(() -> choice(bracketed_primary_bool_operator, this.logical_negation, boolean_values, any_value));
+
+    // Logical Negation
+    public rule logical_negation = seq(NOT, bool_operator)
+                                    .push($ -> new NotNode($.$0()));
+
+    // Final boolean expression
+    public rule bool = lazy(() -> choice(primary_bool_operator, bracketed_primary_bool_operator));
+
+
+    // OBJECT DECLARATIONS (arrays and maps)
 
     // Array declaration
     // TODO
@@ -99,13 +163,13 @@ public final class Parser extends Grammar {
     // TODO
 
     // Regrouping expressions
-    public rule expression = choice(operation, string, bool); // TODO: add array and map
+    public rule expression = choice(numerical_operation, string, bool); // TODO : add array and map declarations
 
 
     // STATEMENTS
 
     // Variable assignment
-    public rule variable_assignment = seq(variable_name, word("="), operation)
+    public rule variable_assignment = seq(any_value, word("="), expression)
                                         .word()
                                         .push($ -> new VariableAssignmentNode($.$0(), $.$1()));
 
@@ -121,15 +185,9 @@ public final class Parser extends Grammar {
     // Function definition
     // TODO
 
-    // SPECIAL FUNCTIONS AND OBJECT ACCESSES
+    // SPECIAL FUNCTIONS
 
-    // Array access
-    // TODO
-
-    // Map access
-    // TODO
-
-    // print
+    // print and println
     // TODO
 
     // Program arguments

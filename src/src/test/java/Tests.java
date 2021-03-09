@@ -134,4 +134,23 @@ public class Tests extends TestFixture {
         failure("{ 1 2 }");
         failure("{1-3}");
     }
+
+    @Test
+    public void testPrint() {
+        this.rule = parser.print;
+        /* print */
+        successExpect("print(\"hello world\")", new PrintNode(new StringNode("hello world")));
+        successExpect("print(1)", new PrintNode(new IntegerNode(1)));
+        successExpect("print(3+4)", new PrintNode(new AddNode(new IntegerNode(3), new IntegerNode(4))));
+        successExpect("print ( True )", new PrintNode(new BoolNode(true)));
+        successExpect("print()", new PrintNode(null));
+        failure("print())");
+        /* println */
+        successExpect("println(\"hello world\")", new PrintNode(new StringNode("hello world"), true));
+        successExpect("println(1)", new PrintNode(new IntegerNode(1), true));
+        successExpect("println(3+4)", new PrintNode(new AddNode(new IntegerNode(3), new IntegerNode(4)), true));
+        successExpect("println ( True )", new PrintNode(new BoolNode(true), true));
+        successExpect("println()", new PrintNode(null, true));
+        failure("println(,)");
+    }
 }

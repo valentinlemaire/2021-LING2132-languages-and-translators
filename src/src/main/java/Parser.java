@@ -32,6 +32,7 @@ public final class Parser extends Grammar {
     public rule WHILE   = reserved("while");
     public rule IF      = reserved("if");
     public rule ELSE    = reserved("else");
+    public rule ELSIF   = reserved("elsif");
     public rule DEF     = reserved("def");
     public rule END     = reserved("end");
     public rule PRINT   = reserved("print");
@@ -177,15 +178,25 @@ public final class Parser extends Grammar {
 
     // Variable assignment
     public rule variable_assignment = left_expression()
-                                        .left(any_value)
+                                        .left(choice(multiple_indexer_access, identifier))
                                         .infix(word("="))
                                         .right(expression)
                                         .push($ -> new VariableAssignmentNode($.$0(), $.$1()));
     // if
-    // TODO
+
+    public rule elsif_block = lazy(() -> seq(ELSIF, bool, word(":"), this.statement_sequence))
+                                .push($ -> new ElseNode($.$0(), $.$1()));
+
+    public rule else_block = lazy(() -> seq(ELSE, word(":"), this.statement_sequence)).push($ -> new ElseNode(null, $.$0()));
+
+    public rule elsif_sequence = seq(elsif_block.at_least(1), else_block.opt()).push(ActionContext::$list);
+
+    public rule if_ = lazy(() -> seq(IF, bool, word(":"), this.statement_sequence, elsif_sequence.or_push_null(), END)).push($ -> new IfNode($.$0(), $.$1(), $.$2()));
 
     // while
-    // TODO
+    public rule while_ = lazy(() -> seq(WHILE, bool, word(":"), this.statement_sequence, END))
+                            .push($ -> new WhileNode($.$0(), $.$1()));
+
 
     // for (EXTRA)
     // TODO
@@ -212,9 +223,11 @@ public final class Parser extends Grammar {
     // TODO
 
 
-    public rule statement = choice(variable_assignment);
+    public rule statement = choice(variable_assignment, if_, while_);
 
-    public rule root = choice(expression, statement, line_comment).at_least(0);
+    public rule statement_sequence = choice(statement, line_comment, expression).at_least(0).push(ActionContext::$list);
+
+    public rule root = statement_sequence;
 
     @Override
     public rule root() {

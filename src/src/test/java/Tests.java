@@ -110,4 +110,39 @@ public class Tests extends TestFixture {
         this.rule = parser.array;
         successExpect("[1, 2]", new ArrayNode(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)}));
     }
+
+    @Test
+    public void testVariableAssignment() {
+        this.rule = parser.variable_assignment;
+        successExpect("a = 1", new VariableAssignmentNode(new IdentifierNode("a"), new IntegerNode(1)));
+        successExpect("a[3] = 1", new VariableAssignmentNode(new IndexerAccessNode(new IdentifierNode("a"), new IntegerNode(3)), new IntegerNode(1)));
+        successExpect("a[3] = fun(2)", new VariableAssignmentNode(new IndexerAccessNode(new IdentifierNode("a"), new IntegerNode(3)), new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(2)))));
+        failure("1 = 2");
+        failure("fun(a) = b");
+    }
+
+    @Test
+    public void testIf() {
+        this.rule = parser.if_;
+        successExpect("if True: x = 1 end", new IfNode(new BoolNode(true), Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))), null));
+        successExpect("if True: x = 1 elsif False: x = 2 elsif b: x = 3 else: x = 4 end",
+                new IfNode(new BoolNode(true), Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))),
+                        Arrays.asList(
+                                new ElseNode(new BoolNode(false),  Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(2)))),
+                                new ElseNode(new IdentifierNode("b"), Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(3)))),
+                                new ElseNode(null, Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(4)))))));
+        failure("if True:");
+        failure("if True end");
+        failure("if: end");
+    }
+
+    @Test
+    public void testWhile() {
+        this.rule = parser.while_;
+        successExpect("while True: i = i+1 a = b end", new WhileNode(new BoolNode(true), Arrays.asList(new VariableAssignmentNode(new IdentifierNode("i"), new AddNode(new IdentifierNode("i"), new IntegerNode(1))), new VariableAssignmentNode(new IdentifierNode("a"), new IdentifierNode("b")))));
+        successExpect("while b: end", new WhileNode(new IdentifierNode("b"), Arrays.asList(new ASTNode[]{})));
+        failure("while: a = b end");
+        failure("while True a = b end");
+        failure("while True: a = b");
+    }
 }

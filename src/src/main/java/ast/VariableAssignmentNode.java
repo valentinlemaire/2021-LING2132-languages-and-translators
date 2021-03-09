@@ -1,10 +1,10 @@
 package ast;
 
 public class VariableAssignmentNode implements ASTNode {
-    public IdentifierNode var;
+    public ASTNode var;
     public ASTNode value;
 
-    public VariableAssignmentNode(IdentifierNode var, ASTNode value) {
+    public VariableAssignmentNode(ASTNode var, ASTNode value) {
         this.var = var;
         this.value = value;
     }

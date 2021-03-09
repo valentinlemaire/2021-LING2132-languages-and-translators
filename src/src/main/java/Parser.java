@@ -31,6 +31,7 @@ public final class Parser extends Grammar {
     public rule NONE    = reserved("None").as_val(new NoneNode());
 
     public rule FOR     = reserved("for");
+    public rule IN      = reserved("in");
     public rule WHILE   = reserved("while");
     public rule IF      = reserved("if");
     public rule ELSE    = reserved("else");
@@ -216,8 +217,8 @@ public final class Parser extends Grammar {
     // SPECIAL FUNCTIONS
 
     // print and println
-    public rule print_in_line = seq(word("print"), word("("), expression.or_push_null(), word(")")).push($ -> new PrintNode($.$0()));
-    public rule print_new_line = seq(word("println"), word("("), expression.or_push_null(), word(")")).push($ -> new PrintNode($.$0(), true));
+    public rule print_in_line = seq(PRINT, word("("), expression.or_push_null(), word(")")).push($ -> new PrintNode($.$0()));
+    public rule print_new_line = seq(PRINTLN, word("("), expression.or_push_null(), word(")")).push($ -> new PrintNode($.$0(), true));
     public rule print = choice(print_in_line, print_new_line);
 
     // Program arguments

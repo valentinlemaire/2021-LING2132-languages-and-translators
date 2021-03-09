@@ -158,6 +158,9 @@ public final class Parser extends Grammar {
 
     // Array declaration
     // TODO
+    /* Tried to make it work, but not yet working */
+    public rule not_bracket = seq(str("]").not(), any).at_least(0).push(ActionContext::str);
+    public rule array = choice(seq('[', not_bracket.sep(0, ','), ']')).word().push($ -> new ArrayNode($.$0()));
 
     // Map declaration
     // TODO

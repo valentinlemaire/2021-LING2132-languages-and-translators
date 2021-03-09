@@ -209,7 +209,9 @@ public final class Parser extends Grammar {
     // SPECIAL FUNCTIONS
 
     // print and println
-    // TODO
+    public rule print_in_line = seq(word("print"), word("("), expression.or_push_null(), word(")")).push($ -> new PrintNode($.$0()));
+    public rule print_new_line = seq(word("println"), word("("), expression.or_push_null(), word(")")).push($ -> new PrintNode($.$0(), true));
+    public rule print = choice(print_in_line, print_new_line);
 
     // Program arguments
     // TODO

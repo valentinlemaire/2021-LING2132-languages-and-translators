@@ -3,7 +3,6 @@ import ast.*;
 import org.testng.annotations.Test;
 import norswap.autumn.TestFixture;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -43,6 +42,13 @@ public class Tests extends TestFixture {
         this.rule = parser.function_call;
         successExpect("fun(1, a, 2+4)", new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(1), new IdentifierNode("a"), new AddNode(new IntegerNode(2), new IntegerNode(4)))));
         successExpect("fun()", new FunctionCallNode(new IdentifierNode("fun"), null));
+    }
+
+    @Test
+    public void testArgs() {
+        this.rule = parser.program_args;
+        successExpect("args[1]", new ArgAccessNode(new IntegerNode(1)));
+        successExpect("args[a+b]", new ArgAccessNode(new AddNode(new IdentifierNode("a"), new IdentifierNode("b"))));
     }
 
     @Test

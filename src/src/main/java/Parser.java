@@ -57,25 +57,33 @@ public final class Parser extends Grammar {
     public rule string = choice(seq('"', not_quote, '"')).word().push($ -> new StringNode($.$0()));
 
     // Integers
-    public rule integer = seq(opt("-"), digit.at_least(1), not(identifier))
+    public rule integer = seq(digit.at_least(1), not(identifier))
             .word()
             .push($ -> new IntegerNode(Integer.parseInt($.str())));
 
     // Basic boolean values
     public rule boolean_values = choice(TRUE, FALSE);
 
-    // Array and map access (TODO double array indexing not supported : a[1][2])
-    public rule indexer_access = lazy(() -> seq(identifier, word("["), this.expression ,word("]")))
+    // Function calls
+    public rule function_args = lazy(() -> left_expression()
+            .operand(this.expression)
+            .infix(word(",")))
+            .push(ActionContext::$list);
+
+    public rule function_call = seq(identifier, word("("), function_args.or_push_null(), word(")"))
+            .push($ -> new FunctionCallNode($.$0(), $.$1()));
+
+    // Array and map access TODO: double array indexing not supported : a[1][2]
+    public rule indexer_access = lazy(() -> seq(choice(function_call, identifier), word("["), this.expression ,word("]")))
                                 .push($ -> new IndexerAccessNode($.$0(), $.$1()));
 
-    // Function calls
-    public rule function_args = lazy(() -> seq(this.expression, seq(word(","), this.expression).at_least(0)))
-                                .push(ActionContext::$list);
 
-    public rule function_call = lazy(() -> seq(identifier, word("("), function_args.or_push_null(), word(")")))
-                                .push($ -> new FunctionCallNode($.$0(), $.$1()));
+    public rule multiple_indexer_access = lazy(() -> left_expression()
+                                            .left(indexer_access)
+                                            .suffix(seq(word("["), this.expression, word("]")), $ -> new IndexerAccessNode($.$0(), $.$1())));
 
-    public rule any_value = choice(indexer_access, function_call, identifier);
+
+    public rule any_value = choice(multiple_indexer_access, function_call, identifier);
 
 
     // NUMERICAL OPERATIONS
@@ -85,31 +93,28 @@ public final class Parser extends Grammar {
             .operand(this.numerical_operator)
             .infix(word("*"), $ -> new MultNode($.$0(), $.$1()))
             .infix(word("/"), $ -> new DivNode ($.$0(), $.$1()))
-            .infix(word("%"), $ -> new ModNode ($.$0(), $.$1()))
-            .requireOperator())
+            .infix(word("%"), $ -> new ModNode ($.$0(), $.$1())))
             .word();
 
     // Addition and Subtraction
     public rule addition = lazy(() -> left_expression()
-            .operand(choice(multiplication, this.numerical_operator))
+            .operand(choice(multiplication, this.numerical_negation))
             .infix(word("+"), $ -> new AddNode($.$0(), $.$1()))
-            .infix(word("-"), $ -> new SubNode($.$0(), $.$1()))
-            .requireOperator())
+            .infix(word("-"), $ -> new SubNode($.$0(), $.$1())))
             .word();
 
+    // Negation
+    public rule numerical_negation = seq(word("-"), multiplication)
+            .push($ -> new NegationNode($.$0()));
 
     // Basic operands without operations or brackets
-    public rule primary_numerical_operator = lazy(() -> choice(addition, multiplication, this.numerical_negation, integer, any_value));
+    public rule primary_numerical_operator = choice(addition, numerical_negation);
 
     // Handling of brackets
     public rule bracketed_primary_numerical_operator = lazy(() -> seq(word("("), this.numerical_operation, word(")")));
 
     // Used inside numerical operations
     public rule numerical_operator = lazy(() -> choice(bracketed_primary_numerical_operator, integer, any_value));
-
-    // Negation
-    public rule numerical_negation = seq(word("-"), numerical_operator)
-                                        .push($ -> new NegationNode($.$0()));
 
     // Final numerical operation
     public rule numerical_operation = choice(primary_numerical_operator, bracketed_primary_numerical_operator);
@@ -133,12 +138,11 @@ public final class Parser extends Grammar {
     public rule logical_operation = lazy(() -> left_expression()
             .operand(this.bool_operator)
             .infix(AND, $ -> new AndNode($.$0(), $.$1()))
-            .infix(OR,  $ -> new OrNode ($.$0(), $.$1()))
-            .requireOperator())
+            .infix(OR,  $ -> new OrNode ($.$0(), $.$1())))
             .word();
 
     // Basic operands without operations and brackets
-    public rule primary_bool_operator = lazy(() -> choice(comparison, logical_operation, this.logical_negation, boolean_values, any_value));
+    public rule primary_bool_operator = lazy(() -> choice(comparison, logical_operation));
 
     // Handling of brackets
     public rule bracketed_primary_bool_operator = lazy(() -> seq(word("("), this.bool, word(")")));
@@ -169,10 +173,11 @@ public final class Parser extends Grammar {
     // STATEMENTS
 
     // Variable assignment
-    public rule variable_assignment = seq(any_value, word("="), expression)
-                                        .word()
+    public rule variable_assignment = left_expression()
+                                        .left(any_value)
+                                        .infix(word("="))
+                                        .right(expression)
                                         .push($ -> new VariableAssignmentNode($.$0(), $.$1()));
-
     // if
     // TODO
 
@@ -204,11 +209,9 @@ public final class Parser extends Grammar {
     // TODO
 
 
-
-
     public rule statement = choice(variable_assignment);
 
-    public rule root = choice(expression, statement);
+    public rule root = choice(expression, statement, line_comment).at_least(0);
 
     @Override
     public rule root() {

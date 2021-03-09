@@ -3,11 +3,11 @@ package ast;
 import java.util.Objects;
 
 public class IndexerAccessNode implements ASTNode {
-    public IdentifierNode var;
+    public ASTNode var;
     public ASTNode indexer;
 
 
-    public IndexerAccessNode(IdentifierNode var, ASTNode indexer) {
+    public IndexerAccessNode(ASTNode var, ASTNode indexer) {
         this.var = var;
         this.indexer = indexer;
     }

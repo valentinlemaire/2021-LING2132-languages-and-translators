@@ -5,6 +5,7 @@ import norswap.autumn.TestFixture;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 
 public class Tests extends TestFixture {
@@ -115,7 +116,7 @@ public class Tests extends TestFixture {
         )));
         successExpect("[:7]", new ArrayNode(new IntegerNode(7)));
         successExpect("[ :\t4/2]", new ArrayNode(new DivNode(new IntegerNode(4), new IntegerNode(2))));
-        successExpect("[\t]", new ArrayNode(Arrays.asList(new ASTNode[]{})));
+        successExpect("[\t]", new ArrayNode((List<ASTNode>) null));
         failure("[:True]");
         failure("[:\"This should fail\"]");
     }
@@ -168,6 +169,19 @@ public class Tests extends TestFixture {
         failure("while: a = b end");
         failure("while True a = b end");
         failure("while True: a = b");
+    }
+
+    @Test
+    public void testFunctionDef() {
+        this.rule = parser.function_def;
+        successExpect("def fun(a, b): x = 1 return 2 end", new FunctionDefinitionNode(new IdentifierNode("fun"), Arrays.asList(new IdentifierNode("a"), new IdentifierNode("b")), Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)), new ReturnNode(new IntegerNode(2)))));
+        successExpect("def fun(a, b): x = 1 end", new FunctionDefinitionNode(new IdentifierNode("fun"), Arrays.asList(new IdentifierNode("a"), new IdentifierNode("b")), Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)))));
+        successExpect("def fun(): end", new FunctionDefinitionNode(new IdentifierNode("fun"), null, Arrays.asList(new ASTNode[]{})));
+        successExpect("def fun(): return end", new FunctionDefinitionNode(new IdentifierNode("fun"), null, Arrays.asList(new ReturnNode(null))));
+        failure("def a[1](): end");
+        failure("def fun: end");
+        failure("fun(a,b): x = 1 end");
+        failure("def fun(): return");
     }
 
     @Test

@@ -54,7 +54,7 @@ public final class Parser extends Grammar {
 
     // Strings
     public rule not_quote = seq(str("\"").not(), any).at_least(0).push(ActionContext::str);
-    public rule string = choice(seq('"', not_quote, '"')).word().push($ -> new StringNode($.$0()));
+    public rule string = seq('"', not_quote, '"').word().push($ -> new StringNode($.$0()));
 
     // Integers
     public rule integer = seq(opt("-"), digit.at_least(1), not(identifier))
@@ -69,10 +69,11 @@ public final class Parser extends Grammar {
                                 .push($ -> new IndexerAccessNode($.$0(), $.$1()));
 
     // Function calls
-    public rule function_args = lazy(() -> seq(this.expression, seq(word(","), this.expression).at_least(0)))
-                                .push(ActionContext::$list);
+    public rule list = lazy(() -> left_expression()
+            .operand(this.expression)
+            .infix(word(","), ActionContext::$list));
 
-    public rule function_call = lazy(() -> seq(identifier, word("("), function_args.or_push_null(), word(")")))
+    public rule function_call = lazy(() -> seq(identifier, word("("), list.or_push_null(), word(")")))
                                 .push($ -> new FunctionCallNode($.$0(), $.$1()));
 
     public rule any_value = choice(indexer_access, function_call, identifier);
@@ -159,8 +160,7 @@ public final class Parser extends Grammar {
     // Array declaration
     // TODO
     /* Tried to make it work, but not yet working */
-    public rule not_bracket = seq(str("]").not(), any).at_least(0).push(ActionContext::str);
-    public rule array = choice(seq('[', not_bracket.sep(0, ','), ']')).word().push($ -> new ArrayNode($.$0()));
+    public rule array = seq(word("["), list, word("]")).push($ -> new ArrayNode($.$0()));
 
     // Map declaration
     // TODO

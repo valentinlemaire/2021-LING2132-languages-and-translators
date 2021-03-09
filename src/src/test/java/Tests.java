@@ -101,6 +101,6 @@ public class Tests extends TestFixture {
     @Test
     public void testArray() {
         this.rule = parser.array;
-        successExpect("[1, 2]", new ArrayNode(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)}));
+        successExpect("[1, 2]", new ArrayNode(Arrays.asList(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)})));
     }
 }

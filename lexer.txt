@@ -5,10 +5,11 @@ end
 if 
 else
 elsif
-print
-println
-range
+print()
+println()
+int()
+range()
 return
 args
-sort
+sort()
 indexer

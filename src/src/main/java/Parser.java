@@ -206,7 +206,7 @@ public final class Parser extends Grammar {
     // TODO
 
     // Parsing strings into integers
-    // TODO
+    public rule parse_int = seq(word("int"), word("("), choice(string, any_value), word(")")).push($ -> new ParseIntNode($.$0()));
 
     // EXTRAS
     // range function

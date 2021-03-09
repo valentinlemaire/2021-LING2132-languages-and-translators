@@ -153,4 +153,17 @@ public class Tests extends TestFixture {
         successExpect("println()", new PrintNode(null, true));
         failure("println(,)");
     }
+
+    @Test
+    public void testParseInt() {
+        this.rule = parser.parse_int;
+        successExpect("int(\"1\")", new ParseIntNode(new StringNode("1")));
+        successExpect("int (\t\"122\")", new ParseIntNode(new StringNode("122")));
+        successExpect("int(\"hello\")", new ParseIntNode(new StringNode("hello")));
+        successExpect("int(fun(3, \"hello\"))", new ParseIntNode(new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello")))));
+        failure("int(3)");
+        failure("inte ()");
+        failure("int()");
+        failure("int(True)");
+    }
 }

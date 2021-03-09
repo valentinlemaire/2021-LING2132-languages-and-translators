@@ -1,7 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="Tests" tests="1" skipped="0" failures="0" errors="0" timestamp="2021-03-05T14:59:58" hostname="Valentins-MacBook-Pro.local" time="0.056">
+<testsuite name="Tests" tests="10" skipped="0" failures="1" errors="0" timestamp="2021-03-09T17:53:47" hostname="Augustins-MacBook-Pro.local" time="0.142">
   <properties/>
-  <testcase name="testString" classname="Tests" time="0.056"/>
+  <testcase name="testArray" classname="Tests" time="0.03"/>
+  <testcase name="testBooleanComparisons" classname="Tests" time="0.038"/>
+  <testcase name="testBooleanValues" classname="Tests" time="0.022"/>
+  <testcase name="testFunctionCall" classname="Tests" time="0.004">
+    <failure message="java.lang.AssertionError: The top of the AST stack did not match the expected value.&#10;expected [ast.FunctionCallNode@43b1d71] but found [ast.FunctionCallNode@48a6f8c]&#10;------" type="java.lang.AssertionError">java.lang.AssertionError: The top of the AST stack did not match the expected value.
+expected [ast.FunctionCallNode@43b1d71] but found [ast.FunctionCallNode@48a6f8c]
+------
+	at Tests.testFunctionCall(Tests.java:43)
+</failure>
+  </testcase>
+  <testcase name="testIndexing" classname="Tests" time="0.01"/>
+  <testcase name="testLogicalNegation" classname="Tests" time="0.008"/>
+  <testcase name="testLogicalOperations" classname="Tests" time="0.004"/>
+  <testcase name="testNumericalValue" classname="Tests" time="0.003"/>
+  <testcase name="testOperations" classname="Tests" time="0.012"/>
+  <testcase name="testString" classname="Tests" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

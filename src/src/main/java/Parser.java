@@ -31,9 +31,11 @@ public final class Parser extends Grammar {
     public rule NONE    = reserved("None").as_val(new NoneNode());
 
     public rule FOR     = reserved("for");
+    public rule IN      = reserved("in");
     public rule WHILE   = reserved("while");
     public rule IF      = reserved("if");
     public rule ELSE    = reserved("else");
+    public rule ELSIF   = reserved("elsif");
     public rule DEF     = reserved("def");
     public rule END     = reserved("end");
     public rule PRINT   = reserved("print");
@@ -160,7 +162,7 @@ public final class Parser extends Grammar {
     // OBJECT DECLARATIONS (arrays and maps)
 
     // Array declaration
-    public rule full_array = seq(word("["), list, word("]")).push($ -> new ArrayNode((List<ASTNode>) $.$0()));
+    public rule full_array = seq(word("["), list.or_push_null(), word("]")).push($ -> new ArrayNode((List<ASTNode>) $.$0()));
     public rule empty_array = seq(word("["), word(":"), numerical_operation, word("]")).push($ -> new ArrayNode((ASTNode) $.$0()));
     public rule array = choice(full_array, empty_array);
 
@@ -171,6 +173,7 @@ public final class Parser extends Grammar {
             .infix(word(","))).push(ActionContext::$list);
     public rule map = seq(word("{"), map_elements_list, word("}")).push($ -> new MapNode($.$0()));
 
+
     // Regrouping expressions
     public rule expression = choice(numerical_operation, string, bool); // TODO : add array and map declarations
 
@@ -179,27 +182,43 @@ public final class Parser extends Grammar {
 
     // Variable assignment
     public rule variable_assignment = left_expression()
-                                        .left(any_value)
+                                        .left(choice(multiple_indexer_access, identifier))
                                         .infix(word("="))
                                         .right(expression)
                                         .push($ -> new VariableAssignmentNode($.$0(), $.$1()));
+
+    // return statement
+
+    public rule return_ = seq(RETURN, this.expression.or_push_null()).push($ -> new ReturnNode($.$0()));
+
     // if
-    // TODO
+
+    public rule elsif_block = lazy(() -> seq(ELSIF, bool, word(":"), this.statement_sequence))
+                                .push($ -> new ElseNode($.$0(), $.$1()));
+
+    public rule else_block = lazy(() -> seq(ELSE, word(":"), this.statement_sequence)).push($ -> new ElseNode(null, $.$0()));
+
+    public rule elsif_sequence = seq(elsif_block.at_least(1), else_block.opt()).push(ActionContext::$list);
+
+    public rule if_ = lazy(() -> seq(IF, bool, word(":"), this.statement_sequence, elsif_sequence.or_push_null(), END)).push($ -> new IfNode($.$0(), $.$1(), $.$2()));
 
     // while
-    // TODO
+    public rule while_ = lazy(() -> seq(WHILE, bool, word(":"), this.statement_sequence, END))
+                            .push($ -> new WhileNode($.$0(), $.$1()));
+
 
     // for (EXTRA)
     // TODO
 
     // Function definition
-    // TODO
+    public rule function_def = lazy(() -> seq(DEF, identifier, word("("), list.or_push_null(), word(")"), word(":"), this.statement_sequence, END))
+                        .push($ -> new FunctionDefinitionNode($.$0(), $.$1(), $.$2()));
 
     // SPECIAL FUNCTIONS
 
     // print and println
-    public rule print_in_line = seq(word("print"), word("("), expression.or_push_null(), word(")")).push($ -> new PrintNode($.$0()));
-    public rule print_new_line = seq(word("println"), word("("), expression.or_push_null(), word(")")).push($ -> new PrintNode($.$0(), true));
+    public rule print_in_line = seq(PRINT, word("("), expression.or_push_null(), word(")")).push($ -> new PrintNode($.$0()));
+    public rule print_new_line = seq(PRINTLN, word("("), expression.or_push_null(), word(")")).push($ -> new PrintNode($.$0(), true));
     public rule print = choice(print_in_line, print_new_line);
 
     // Program arguments
@@ -216,9 +235,11 @@ public final class Parser extends Grammar {
     // TODO
 
 
-    public rule statement = choice(variable_assignment);
+    public rule statement = choice(variable_assignment, if_, while_, function_def, print, return_);
 
-    public rule root = choice(expression, statement, line_comment).at_least(0);
+    public rule statement_sequence = choice(statement, line_comment, expression).at_least(0).push(ActionContext::$list);
+
+    public rule root = statement_sequence;
 
     @Override
     public rule root() {

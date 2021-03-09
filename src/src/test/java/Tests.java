@@ -5,6 +5,7 @@ import norswap.autumn.TestFixture;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 
 public class Tests extends TestFixture {
@@ -115,7 +116,7 @@ public class Tests extends TestFixture {
         )));
         successExpect("[:7]", new ArrayNode(new IntegerNode(7)));
         successExpect("[ :\t4/2]", new ArrayNode(new DivNode(new IntegerNode(4), new IntegerNode(2))));
-        successExpect("[\t]", new ArrayNode(Arrays.asList(new ASTNode[]{})));
+        successExpect("[\t]", new ArrayNode((List<ASTNode>) null));
         failure("[:True]");
         failure("[:\"This should fail\"]");
     }
@@ -133,6 +134,54 @@ public class Tests extends TestFixture {
         failure("{ 'hello");
         failure("{ 1 2 }");
         failure("{1-3}");
+    }
+
+    @Test
+    public void testVariableAssignment() {
+        this.rule = parser.variable_assignment;
+        successExpect("a = 1", new VariableAssignmentNode(new IdentifierNode("a"), new IntegerNode(1)));
+        successExpect("a[3] = 1", new VariableAssignmentNode(new IndexerAccessNode(new IdentifierNode("a"), new IntegerNode(3)), new IntegerNode(1)));
+        successExpect("a[3] = fun(2)", new VariableAssignmentNode(new IndexerAccessNode(new IdentifierNode("a"), new IntegerNode(3)), new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(2)))));
+        failure("1 = 2");
+        failure("fun(a) = b");
+    }
+
+    @Test
+    public void testIf() {
+        this.rule = parser.if_;
+        successExpect("if True: x = 1 end", new IfNode(new BoolNode(true), Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))), null));
+        successExpect("if True: x = 1 elsif False: x = 2 elsif b: x = 3 else: x = 4 end",
+                new IfNode(new BoolNode(true), Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))),
+                        Arrays.asList(
+                                new ElseNode(new BoolNode(false),  Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(2)))),
+                                new ElseNode(new IdentifierNode("b"), Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(3)))),
+                                new ElseNode(null, Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(4)))))));
+        failure("if True:");
+        failure("if True end");
+        failure("if: end");
+    }
+
+    @Test
+    public void testWhile() {
+        this.rule = parser.while_;
+        successExpect("while True: i = i+1 a = b end", new WhileNode(new BoolNode(true), Arrays.asList(new VariableAssignmentNode(new IdentifierNode("i"), new AddNode(new IdentifierNode("i"), new IntegerNode(1))), new VariableAssignmentNode(new IdentifierNode("a"), new IdentifierNode("b")))));
+        successExpect("while b: end", new WhileNode(new IdentifierNode("b"), Arrays.asList(new ASTNode[]{})));
+        failure("while: a = b end");
+        failure("while True a = b end");
+        failure("while True: a = b");
+    }
+
+    @Test
+    public void testFunctionDef() {
+        this.rule = parser.function_def;
+        successExpect("def fun(a, b): x = 1 return 2 end", new FunctionDefinitionNode(new IdentifierNode("fun"), Arrays.asList(new IdentifierNode("a"), new IdentifierNode("b")), Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)), new ReturnNode(new IntegerNode(2)))));
+        successExpect("def fun(a, b): x = 1 end", new FunctionDefinitionNode(new IdentifierNode("fun"), Arrays.asList(new IdentifierNode("a"), new IdentifierNode("b")), Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)))));
+        successExpect("def fun(): end", new FunctionDefinitionNode(new IdentifierNode("fun"), null, Arrays.asList(new ASTNode[]{})));
+        successExpect("def fun(): return end", new FunctionDefinitionNode(new IdentifierNode("fun"), null, Arrays.asList(new ReturnNode(null))));
+        failure("def a[1](): end");
+        failure("def fun: end");
+        failure("fun(a,b): x = 1 end");
+        failure("def fun(): return");
     }
 
     @Test

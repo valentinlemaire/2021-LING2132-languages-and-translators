@@ -5,9 +5,14 @@ import java.util.Objects;
 
 public class ArrayNode implements ASTNode{
     public List<ASTNode> elements;
+    public ASTNode size;
 
     public ArrayNode(List<ASTNode> elements) {
         this.elements = elements;
+    }
+
+    public ArrayNode(ASTNode size){
+        this.size = size;
     }
 
     @Override

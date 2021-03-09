@@ -7,6 +7,8 @@ import norswap.autumn.positions.LineMapString;
 
 import ast.*;
 
+import java.util.List;
+
 public final class Parser extends Grammar {
 
     // Comments
@@ -65,30 +67,20 @@ public final class Parser extends Grammar {
     public rule boolean_values = choice(TRUE, FALSE);
 
     // Function calls
-    public rule function_args = lazy(() -> left_expression()
-            .operand(this.expression)
-            .infix(word(",")))
-            .push(ActionContext::$list);
-
-    public rule function_call = seq(identifier, word("("), function_args.or_push_null(), word(")"))
-            .push($ -> new FunctionCallNode($.$0(), $.$1()));
-
-    // Array and map access TODO: double array indexing not supported : a[1][2]
-    public rule indexer_access = lazy(() -> seq(choice(function_call, identifier), word("["), this.expression ,word("]")))
-                                .push($ -> new IndexerAccessNode($.$0(), $.$1()));
-
-    public rule multiple_indexer_access = lazy(() -> left_expression()
-                                            .left(indexer_access)
-                                            .suffix(seq(word("["), this.expression, word("]")), $ -> new IndexerAccessNode($.$0(), $.$1())));
-
-    // Function calls
     public rule list = lazy(() -> left_expression()
             .operand(this.expression)
-            .infix(word(","), ActionContext::$list));
+            .infix(word(","))).push(ActionContext::$list);
 
     public rule function_call = lazy(() -> seq(identifier, word("("), list.or_push_null(), word(")")))
                                 .push($ -> new FunctionCallNode($.$0(), $.$1()));
 
+    // Array and map access
+    public rule indexer_access = lazy(() -> seq(choice(function_call, identifier), word("["), this.expression ,word("]")))
+            .push($ -> new IndexerAccessNode($.$0(), $.$1()));
+
+    public rule multiple_indexer_access = lazy(() -> left_expression()
+            .left(indexer_access)
+            .suffix(seq(word("["), this.expression, word("]")), $ -> new IndexerAccessNode($.$0(), $.$1())));
 
 
     public rule any_value = choice(multiple_indexer_access, function_call, identifier);
@@ -168,12 +160,16 @@ public final class Parser extends Grammar {
     // OBJECT DECLARATIONS (arrays and maps)
 
     // Array declaration
-    // TODO
-    /* Tried to make it work, but not yet working */
-    public rule array = seq(word("["), list, word("]")).push($ -> new ArrayNode($.$0()));
+    public rule full_array = seq(word("["), list, word("]")).push($ -> new ArrayNode((List<ASTNode>) $.$0()));
+    public rule empty_array = seq(word("["), word(":"), numerical_operation, word("]")).push($ -> new ArrayNode((ASTNode) $.$0()));
+    public rule array = choice(full_array, empty_array);
 
     // Map declaration
-    // TODO
+    public rule map_element = lazy(() -> seq(this.expression, word(":"), this.expression)).push($ -> new PairNode($.$0(), $.$1()));
+    public rule map_elements_list = lazy(() -> left_expression()
+            .operand(this.map_element)
+            .infix(word(","))).push(ActionContext::$list);
+    public rule map = seq(word("{"), map_elements_list, word("}")).push($ -> new MapNode($.$0()));
 
     // Regrouping expressions
     public rule expression = choice(numerical_operation, string, bool); // TODO : add array and map declarations

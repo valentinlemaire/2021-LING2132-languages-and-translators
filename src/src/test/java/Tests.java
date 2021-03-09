@@ -108,7 +108,31 @@ public class Tests extends TestFixture {
     @Test
     public void testArray() {
         this.rule = parser.array;
-        successExpect("[1, 2]", new ArrayNode(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)}));
+        successExpect("[1, 2]", new ArrayNode(Arrays.asList(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)})));
+        successExpect("[1+2, 3]", new ArrayNode(Arrays.asList(
+                new AddNode(new IntegerNode(1), new IntegerNode(2)),
+                new IntegerNode(3)
+        )));
+        successExpect("[:7]", new ArrayNode(new IntegerNode(7)));
+        successExpect("[ :\t4/2]", new ArrayNode(new DivNode(new IntegerNode(4), new IntegerNode(2))));
+        successExpect("[\t]", new ArrayNode(Arrays.asList(new ASTNode[]{})));
+        failure("[:True]");
+        failure("[:\"This should fail\"]");
+    }
+
+    @Test
+    public void testMap() {
+        this.rule = parser.map;
+        successExpect("{1 : 6/5,\t \"hello\"  : fun(2)}", new MapNode(Arrays.asList(
+                new PairNode(new IntegerNode(1), new DivNode(new IntegerNode(6), new IntegerNode(5))),
+                new PairNode(new StringNode("hello"), new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new ASTNode[]{new IntegerNode(2)})))
+        )));
+        successExpect("{True : False}", new MapNode(Arrays.asList(
+                new PairNode(new BoolNode(true), new BoolNode(false))
+        )));
+        failure("{ 'hello");
+        failure("{ 1 2 }");
+        failure("{1-3}");
     }
 
     @Test

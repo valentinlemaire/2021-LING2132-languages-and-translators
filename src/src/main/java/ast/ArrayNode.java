@@ -1,12 +1,18 @@
 package ast;
 
+import java.util.List;
 import java.util.Objects;
 
 public class ArrayNode implements ASTNode{
-    public ASTNode[] elements;
+    public List<ASTNode> elements;
+    public ASTNode size;
 
-    public ArrayNode(ASTNode[] elements) {
+    public ArrayNode(List<ASTNode> elements) {
         this.elements = elements;
+    }
+
+    public ArrayNode(ASTNode size){
+        this.size = size;
     }
 
     @Override

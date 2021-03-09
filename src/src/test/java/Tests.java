@@ -29,12 +29,12 @@ public class Tests extends TestFixture {
 
     @Test
     public void testIndexing() {
-        this.rule = parser.indexer_access;
+        this.rule = parser.multiple_indexer_access;
         successExpect("a[1]", new IndexerAccessNode(new IdentifierNode("a"), new IntegerNode(1)));
         successExpect("a[b]", new IndexerAccessNode(new IdentifierNode("a"), new IdentifierNode("b")));
         successExpect("a[b[c[1]]]", new IndexerAccessNode(new IdentifierNode("a"), new IndexerAccessNode(new IdentifierNode("b"), new IndexerAccessNode(new IdentifierNode("c"), new IntegerNode(1)))));
         successExpect("a[\"test\"]", new IndexerAccessNode(new IdentifierNode("a"), new StringNode("test")));
-        //success("a[1][2]");
+        success("a[1][2]");
     }
 
     @Test
@@ -47,18 +47,25 @@ public class Tests extends TestFixture {
     @Test
     public void testOperations() {
         this.rule = parser.numerical_operation;
+        successExpect("1 - 1", new SubNode(new IntegerNode(1), new IntegerNode(1)));
+        successExpect("1 / 2+ 1", new AddNode(new DivNode(new IntegerNode(1), new IntegerNode(2)), new IntegerNode(1)));
+        successExpect("-1 + 1", new AddNode(new NegationNode(new IntegerNode(1)), new IntegerNode(1)));
+        successExpect("5 * 4 + 20", new AddNode(new MultNode(new IntegerNode(5), new IntegerNode(4)), new IntegerNode(20)));
+        successExpect("5 + 20 * 4", new AddNode(new IntegerNode(5), new MultNode(new IntegerNode(20), new IntegerNode(4))));
+        successExpect("5 + 4 % 2 - 6", new SubNode(new AddNode(new IntegerNode(5), new ModNode(new IntegerNode(4), new IntegerNode(2))), new IntegerNode(6)));
+
         successExpect("(1 + 1) + 1000", new AddNode(new AddNode(new IntegerNode(1), new IntegerNode(1)), new IntegerNode(1000)));
         successExpect("1 + (1 + 1000)", new AddNode(new IntegerNode(1), new AddNode(new IntegerNode(1), new IntegerNode(1000))));
 
         successExpect("1 + (90 * 85)", new AddNode(new IntegerNode(1), new MultNode(new IntegerNode(90), new IntegerNode(85))));
         successExpect("(1 + 90) * 85", new MultNode(new AddNode(new IntegerNode(1), new IntegerNode(90)), new IntegerNode(85)));
 
-        successExpect("1 - 1", new SubNode(new IntegerNode(1), new IntegerNode(1)));
-        successExpect("1 / 2+ 1", new AddNode(new DivNode(new IntegerNode(1), new IntegerNode(2)), new IntegerNode(1)));
-        successExpect("-1 + 1", new AddNode(new IntegerNode(-1), new IntegerNode(1)));
-        successExpect("5 * 4 + 20", new AddNode(new MultNode(new IntegerNode(5), new IntegerNode(4)), new IntegerNode(20)));
-        successExpect("5 + 4 % 2 - 6", new SubNode(new AddNode(new IntegerNode(5), new ModNode(new IntegerNode(4), new IntegerNode(2))), new IntegerNode(6)));
-        failure("5 + +1");
+        successExpect("- 5 * 1", new NegationNode(new MultNode(new IntegerNode(5), new IntegerNode(1))));
+        failure("5 * - 1");
+
+        // this is weird
+        success("5 + -1");
+
     }
 
     @Test

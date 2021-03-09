@@ -105,5 +105,9 @@ public class Tests extends TestFixture {
         successExpect("not a and b", new AndNode(new NotNode(new IdentifierNode("a")), new IdentifierNode("b")));
     }
 
-
+    @Test
+    public void testArray() {
+        this.rule = parser.array;
+        successExpect("[1, 2]", new ArrayNode(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)}));
+    }
 }

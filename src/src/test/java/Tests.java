@@ -178,6 +178,17 @@ public class Tests extends TestFixture {
     }
 
     @Test
+    public void testFor() {
+        this.rule = parser.for_;
+        successExpect("for i in b: x = 1 end", new ForNode(new IdentifierNode("i"), new IdentifierNode("b"), Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)))));
+        successExpect("for i in [1, 2, 3]: x = 1 end", new ForNode(new IdentifierNode("i"), new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2), new IntegerNode(3))), Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)))));
+        failure("for i in \"hello\": x = 1 end");
+        failure("for i in b: x = 1");
+        failure("for i b : x = 1 end");
+        failure("for i in b x = 1 end");
+    }
+
+    @Test
     public void testFunctionDef() {
         this.rule = parser.function_def;
         successExpect("def fun(a, b): x = 1 return 2 end", new FunctionDefinitionNode(new IdentifierNode("fun"), Arrays.asList(new IdentifierNode("a"), new IdentifierNode("b")), Arrays.asList(new VariableAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)), new ReturnNode(new IntegerNode(2)))));

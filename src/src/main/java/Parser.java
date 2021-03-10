@@ -216,7 +216,8 @@ public final class Parser extends Grammar {
 
 
     // for (EXTRA)
-    // TODO
+    public rule for_ = lazy(() -> seq(FOR, identifier, IN, choice(any_value, array), word(":"), this.statement_sequence, END)) // TODO add range and indexer
+                            .push($ -> new ForNode($.$0(), $.$1(), $.$2()));
 
     // Function definition
     public rule function_def = lazy(() -> seq(DEF, identifier, word("("), list.or_push_null(), word(")"), word(":"), this.statement_sequence, END))
@@ -246,7 +247,7 @@ public final class Parser extends Grammar {
     // TODO
 
 
-    public rule statement = choice(variable_assignment, if_, while_, function_def, print, return_, parse_int, sort);
+    public rule statement = choice(variable_assignment, if_, while_, for_, function_def, print, return_, parse_int, sort);
 
     public rule statement_sequence = choice(statement, line_comment, expression).at_least(0).push(ActionContext::$list);
 

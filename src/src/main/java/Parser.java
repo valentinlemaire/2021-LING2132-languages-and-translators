@@ -45,10 +45,11 @@ public final class Parser extends Grammar {
     public rule PRINTLN  = reserved("println");
     public rule RANGE    = reserved("range");
     public rule INDEXER  = reserved("indexer");
+    public rule LEN      = reserved("len");
     public rule RETURN   = reserved("return");
     public rule SORT     = reserved("sort");
     public rule INT      = reserved("int");
-    public rule ARGS     = reserved("args");
+    public rule ARGS     = reserved("args").push($ -> new IdentifierNode($.str()));
     public rule NOT      = reserved("not");
     public rule AND      = reserved("and");
     public rule OR       = reserved("or");
@@ -104,7 +105,7 @@ public final class Parser extends Grammar {
                                 .push($ -> new FunctionCallNode($.$0(), $.$1()));
 
     // Array and map access
-    public rule indexer_access = lazy(() -> seq(choice(function_call, identifier), LBRACKET, this.expression ,RBRACKET))
+    public rule indexer_access = lazy(() -> seq(choice(function_call, identifier, ARGS), LBRACKET, this.expression ,RBRACKET))
             .push($ -> new BinaryNode($.$0(), $.$1(), BinaryNode.IDX_ACCESS));
 
     public rule multiple_indexer_access = lazy(() -> left_expression()
@@ -113,9 +114,9 @@ public final class Parser extends Grammar {
 
 
     // Program arguments
-    public rule program_args = lazy(() -> seq(ARGS, LBRACKET, this.expression, RBRACKET).push($ -> new UnaryNode($.$0(), UnaryNode.ARG_ACCESS)));
+    // public rule program_args = lazy(() -> seq(ARGS, LBRACKET, this.expression, RBRACKET).push($ -> new UnaryNode($.$0(), UnaryNode.ARG_ACCESS)));
 
-    public rule any_value = choice(multiple_indexer_access, function_call, program_args, identifier);
+    public rule any_value = lazy(() -> choice(multiple_indexer_access, function_call, identifier, this.len));
 
     // NUMERICAL OPERATIONS
 
@@ -176,7 +177,7 @@ public final class Parser extends Grammar {
     public rule paren_primary_bool_operator = lazy(() -> seq(LPAREN, choice(or_operation, this.logical_negation), RPAREN));
 
     // Used inside boolean operations
-    public rule bool_operator = lazy(() -> choice(paren_primary_bool_operator, any_value, boolean_values));
+    public rule bool_operator = lazy(() -> choice(paren_primary_bool_operator, this.logical_negation, any_value, boolean_values));
 
     // Logical Negation
     public rule logical_negation = seq(NOT, bool_operator)
@@ -195,6 +196,10 @@ public final class Parser extends Grammar {
 
     public rule array = choice(full_array, empty_array);
 
+    // sort function
+    public rule sort = seq(SORT, LPAREN, choice(array, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.SORT));
+
+
     // Map declaration
     public rule map_element = lazy(() -> seq(this.expression, COLON, this.expression)).push($ -> new BinaryNode($.$0(), $.$1(), BinaryNode.PAIR));
 
@@ -203,18 +208,22 @@ public final class Parser extends Grammar {
             .infix(COMMA))
             .push(ActionContext::$list);
 
-    public rule map = seq(LBRACE, map_elements_list, RBRACE).push($ -> new MapNode($.$0()));
+    public rule map = seq(LBRACE, map_elements_list.or_push_null(), RBRACE).push($ -> new MapNode($.$0()));
 
     // EXTRAS
     // range function
     public rule range = seq(RANGE, LPAREN, choice(integer, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.RANGE));
 
     // indexer function (for map)
-    public rule indexer = seq(INDEXER, LPAREN, choice(map, array, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.INDEXER));
+    public rule indexer = lazy(() -> seq(INDEXER, LPAREN, this.indexable, RPAREN)).push($ -> new UnaryNode($.$0(), UnaryNode.INDEXER));
 
+    public rule indexable = choice(array, map, sort, range, indexer, any_value, ARGS);
+
+    // len function
+    public rule len = seq(LEN, LPAREN, indexable, RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.LEN));
 
     // Regrouping expressions
-    public rule expression = choice(numerical_operation, string, map, array, bool, range, indexer, NONE);
+    public rule expression = choice(string, bool, NONE, indexable, numerical_operation);
 
     // STATEMENTS
 
@@ -223,6 +232,7 @@ public final class Parser extends Grammar {
                                         .left(choice(multiple_indexer_access, identifier))
                                         .infix(EQUAL)
                                         .right(expression)
+                                        .requireOperator()
                                         .push($ -> new BinaryNode($.$0(), $.$1(), BinaryNode.VAR_ASSGNMT));
 
     // return statement
@@ -230,13 +240,12 @@ public final class Parser extends Grammar {
     public rule return_ = seq(RETURN, this.expression.or_push_null()).push($ -> new UnaryNode($.$0(), UnaryNode.RETURN));
 
     // if
-
     public rule elsif_block = lazy(() -> seq(ELSIF, bool, COLON, this.statement_sequence))
                                 .push($ -> new ElseNode($.$0(), $.$1()));
 
     public rule else_block = lazy(() -> seq(ELSE, COLON, this.statement_sequence)).push($ -> new ElseNode(null, $.$0()));
 
-    public rule elsif_sequence = seq(elsif_block.at_least(1), else_block.opt()).push(ActionContext::$list);
+    public rule elsif_sequence = seq(elsif_block.at_least(0), else_block.opt()).push(ActionContext::$list);
 
     public rule if_ = lazy(() -> seq(IF, bool, COLON, this.statement_sequence, elsif_sequence.or_push_null(), END)).push($ -> new IfNode($.$0(), $.$1(), $.$2()));
 
@@ -246,7 +255,7 @@ public final class Parser extends Grammar {
 
 
     // for (EXTRA)
-    public rule for_ = lazy(() -> seq(FOR, identifier, IN, choice(any_value, array, range, indexer), COLON, this.statement_sequence, END))
+    public rule for_ = lazy(() -> seq(FOR, identifier, IN, indexable, COLON, this.statement_sequence, END))
                             .push($ -> new ForNode($.$0(), $.$1(), $.$2()));
 
     // Function definition
@@ -266,14 +275,13 @@ public final class Parser extends Grammar {
     // Parsing strings into integers
     public rule parse_int = seq(INT, LPAREN, choice(string, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.PARSE_INT));
 
-    // sort function
-    public rule sort = seq(SORT, LPAREN, choice(array, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.SORT));
 
-
-    public rule statement = choice(variable_assignment, if_, while_, for_, function_def, print, return_, parse_int, sort);
+    // Regrouping statements
+    public rule statement = choice(function_def, if_, while_, for_, print, return_, parse_int, variable_assignment);
 
     public rule statement_sequence = choice(statement, line_comment, expression).at_least(0).push(ActionContext::$list);
 
+    // root parser
     public rule root = statement_sequence;
 
     @Override

@@ -45,13 +45,6 @@ public class Tests extends TestFixture {
     }
 
     @Test
-    public void testArgs() {
-        this.rule = parser.program_args;
-        successExpect("args[1]", new UnaryNode(new IntegerNode(1), UnaryNode.ARG_ACCESS));
-        successExpect("args[a+b]", new UnaryNode(new BinaryNode(new IdentifierNode("a"), new IdentifierNode("b"), BinaryNode.ADD), UnaryNode.ARG_ACCESS));
-    }
-
-    @Test
     public void testOperations() {
         this.rule = parser.numerical_operation;
         successExpect("1 - 1", new BinaryNode(new IntegerNode(1), new IntegerNode(1), BinaryNode.SUB));
@@ -104,7 +97,11 @@ public class Tests extends TestFixture {
         successExpect("a and b or c", new BinaryNode(new BinaryNode(new IdentifierNode("a"), new IdentifierNode("b"), BinaryNode.AND),new IdentifierNode("c"), BinaryNode.OR));
         successExpect("a or b and c", new BinaryNode(new IdentifierNode("a"), new BinaryNode(new IdentifierNode("b"), new IdentifierNode("c"), BinaryNode.AND), BinaryNode.OR));
 
-        successExpect("1+1 < 2 and True or b == (not False) and True", new BinaryNode(new BinaryNode(new BinaryNode(new BinaryNode(new IntegerNode(1), new IntegerNode(1), BinaryNode.ADD), new IntegerNode(2), BinaryNode.L), new BoolNode(true), BinaryNode.AND), new BinaryNode(new BinaryNode(new IdentifierNode("b"), new UnaryNode(new BoolNode(false), UnaryNode.NOT), BinaryNode.EQ), new BoolNode(true), BinaryNode.AND), BinaryNode.OR));//new BinaryNode(new BinaryNode(new BinaryNode(, new BoolNode(true), BinaryNode.AND), new IdentifierNode("b"), BinaryNode.OR), new BinaryNode(new UnaryNode(new BoolNode(false), UnaryNode.NOT), new BoolNode(true), BinaryNode.AND), BinaryNode.EQ));
+        successExpect("1+1 < 2 and True or b == not False and True", new BinaryNode(new BinaryNode(new BinaryNode(new BinaryNode(new IntegerNode(1), new IntegerNode(1), BinaryNode.ADD), new IntegerNode(2), BinaryNode.L), new BoolNode(true), BinaryNode.AND), new BinaryNode(new BinaryNode(new IdentifierNode("b"), new UnaryNode(new BoolNode(false), UnaryNode.NOT), BinaryNode.EQ), new BoolNode(true), BinaryNode.AND), BinaryNode.OR));
+        successExpect("a and not b", new BinaryNode(new IdentifierNode("a"), new UnaryNode(new IdentifierNode("b"), UnaryNode.NOT), BinaryNode.AND));
+        successExpect("a or not b", new BinaryNode(new IdentifierNode("a"), new UnaryNode(new IdentifierNode("b"), UnaryNode.NOT), BinaryNode.OR));
+        successExpect("not a and b", new BinaryNode(new UnaryNode(new IdentifierNode("a"), UnaryNode.NOT), new IdentifierNode("b"), BinaryNode.AND));
+
     }
 
     @Test
@@ -113,7 +110,6 @@ public class Tests extends TestFixture {
         successExpect("not a", new UnaryNode(new IdentifierNode("a"), UnaryNode.NOT));
         successExpect("not True", new UnaryNode(new BoolNode(true), UnaryNode.NOT));
         successExpect("not (a < b)", new UnaryNode(new BinaryNode(new IdentifierNode("a"), new IdentifierNode("b"), BinaryNode.L), UnaryNode.NOT));
-        failure("not a and b");
     }
 
     @Test
@@ -159,7 +155,7 @@ public class Tests extends TestFixture {
     @Test
     public void testIf() {
         this.rule = parser.if_;
-        successExpect("if True: x = 1 end", new IfNode(new BoolNode(true), Arrays.asList(new BinaryNode(new IdentifierNode("x"), new IntegerNode(1), BinaryNode.VAR_ASSGNMT)), null));
+        successExpect("if True: x = 1 end", new IfNode(new BoolNode(true), Arrays.asList(new BinaryNode(new IdentifierNode("x"), new IntegerNode(1), BinaryNode.VAR_ASSGNMT)), Arrays.asList(new ASTNode[]{})));
         successExpect("if True: x = 1 elsif False: x = 2 elsif b: x = 3 else: x = 4 end",
                 new IfNode(new BoolNode(true), Arrays.asList(new BinaryNode(new IdentifierNode("x"), new IntegerNode(1), BinaryNode.VAR_ASSGNMT)),
                         Arrays.asList(

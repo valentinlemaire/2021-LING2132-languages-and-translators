@@ -13,6 +13,7 @@ public class UnaryNode implements ASTNode {
     public static final int NOT         = 7;
     public static final int RETURN      = 8;
     public static final int ARG_ACCESS  = 9;
+    public static final int LEN         = 10;
 
     public ASTNode child;
     public int code;

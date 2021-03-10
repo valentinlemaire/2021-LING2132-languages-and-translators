@@ -8,4 +8,5 @@ numbers = [:len(args)]
 for i in range(len(args)):
     numbers[i] = int(args[i])
 end
+
 print_integers(numbers)

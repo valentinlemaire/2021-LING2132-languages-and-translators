@@ -79,15 +79,15 @@ public final class Parser extends Grammar {
 
     // Array and map access
     public rule indexer_access = lazy(() -> seq(choice(function_call, identifier), word("["), this.expression ,word("]")))
-            .push($ -> new IndexerAccessNode($.$0(), $.$1()));
+            .push($ -> new BinaryNode($.$0(), $.$1(), BinaryNode.IDX_ACCESS));
 
     public rule multiple_indexer_access = lazy(() -> left_expression()
             .left(indexer_access)
-            .suffix(seq(word("["), this.expression, word("]")), $ -> new IndexerAccessNode($.$0(), $.$1())));
+            .suffix(seq(word("["), this.expression, word("]")), $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.IDX_ACCESS)));
 
 
     // Program arguments
-    public rule program_args = lazy(() -> seq(ARGS, word("["), this.expression, word("]")).push($ -> new ArgAccessNode($.$0())));
+    public rule program_args = lazy(() -> seq(ARGS, word("["), this.expression, word("]")).push($ -> new UnaryNode($.$0(), UnaryNode.ARG_ACCESS)));
 
     public rule any_value = choice(multiple_indexer_access, function_call, program_args, identifier);
 
@@ -96,21 +96,21 @@ public final class Parser extends Grammar {
     // Multiplication, Division and Modulo
     public rule multiplication = lazy(() -> left_expression()
             .operand(this.numerical_operator)
-            .infix(word("*"), $ -> new MultNode($.$0(), $.$1()))
-            .infix(word("/"), $ -> new DivNode ($.$0(), $.$1()))
-            .infix(word("%"), $ -> new ModNode ($.$0(), $.$1())))
+            .infix(word("*"), $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.MUL))
+            .infix(word("/"), $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.DIV))
+            .infix(word("%"), $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.MOD)))
             .word();
 
     // Addition and Subtraction
     public rule addition = lazy(() -> left_expression()
             .operand(choice(multiplication, this.numerical_negation))
-            .infix(word("+"), $ -> new AddNode($.$0(), $.$1()))
-            .infix(word("-"), $ -> new SubNode($.$0(), $.$1())))
+            .infix(word("+"), $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.ADD))
+            .infix(word("-"), $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.SUB)))
             .word();
 
     // Negation
     public rule numerical_negation = seq(word("-"), multiplication)
-            .push($ -> new NegationNode($.$0()));
+            .push($ -> new UnaryNode($.$0(), UnaryNode.NEGATION));
 
     // Basic operands without operations or brackets
     public rule primary_numerical_operator = choice(addition, numerical_negation);
@@ -129,12 +129,12 @@ public final class Parser extends Grammar {
     // Value comparison
     public rule comparison = lazy(() -> left_expression()
             .operand(choice(numerical_operation, this.bool_operator))
-            .infix(word("<"),  $ -> new ComparisonNode(ComparisonNode.L,   $.$0(), $.$1()))
-            .infix(word(">"),  $ -> new ComparisonNode(ComparisonNode.G,   $.$0(), $.$1()))
-            .infix(word("=="), $ -> new ComparisonNode(ComparisonNode.EQ,  $.$0(), $.$1()))
-            .infix(word("<="), $ -> new ComparisonNode(ComparisonNode.LEQ, $.$0(), $.$1()))
-            .infix(word(">="), $ -> new ComparisonNode(ComparisonNode.GEQ, $.$0(), $.$1()))
-            .infix(word("!="), $ -> new ComparisonNode(ComparisonNode.NEQ, $.$0(), $.$1()))
+            .infix(word("<"),  $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.L))
+            .infix(word(">"),  $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.G))
+            .infix(word("=="), $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.EQ))
+            .infix(word("<="), $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.LEQ))
+            .infix(word(">="), $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.GEQ))
+            .infix(word("!="), $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.NEQ))
             .requireOperator())
             .word();
 
@@ -142,8 +142,8 @@ public final class Parser extends Grammar {
     // Logical operations
     public rule logical_operation = lazy(() -> left_expression()
             .operand(this.bool_operator)
-            .infix(AND, $ -> new AndNode($.$0(), $.$1()))
-            .infix(OR,  $ -> new OrNode ($.$0(), $.$1())))
+            .infix(AND, $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.AND))
+            .infix(OR,  $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.OR)))
             .word();
 
     // Basic operands without operations and brackets
@@ -157,7 +157,7 @@ public final class Parser extends Grammar {
 
     // Logical Negation
     public rule logical_negation = seq(NOT, bool_operator)
-                                    .push($ -> new NotNode($.$0()));
+                                    .push($ -> new UnaryNode($.$0(), UnaryNode.NOT));
 
     // Final boolean expression
     public rule bool = lazy(() -> choice(primary_bool_operator, bracketed_primary_bool_operator));
@@ -173,7 +173,7 @@ public final class Parser extends Grammar {
     public rule array = choice(full_array, empty_array);
 
     // Map declaration
-    public rule map_element = lazy(() -> seq(this.expression, word(":"), this.expression)).push($ -> new PairNode($.$0(), $.$1()));
+    public rule map_element = lazy(() -> seq(this.expression, word(":"), this.expression)).push($ -> new BinaryNode($.$0(), $.$1(), BinaryNode.PAIR));
 
     public rule map_elements_list = lazy(() -> left_expression()
             .operand(this.map_element)
@@ -193,11 +193,11 @@ public final class Parser extends Grammar {
                                         .left(choice(multiple_indexer_access, identifier))
                                         .infix(word("="))
                                         .right(expression)
-                                        .push($ -> new VariableAssignmentNode($.$0(), $.$1()));
+                                        .push($ -> new BinaryNode($.$0(), $.$1(), BinaryNode.VAR_ASSGNMT));
 
     // return statement
 
-    public rule return_ = seq(RETURN, this.expression.or_push_null()).push($ -> new ReturnNode($.$0()));
+    public rule return_ = seq(RETURN, this.expression.or_push_null()).push($ -> new UnaryNode($.$0(), UnaryNode.RETURN));
 
     // if
 

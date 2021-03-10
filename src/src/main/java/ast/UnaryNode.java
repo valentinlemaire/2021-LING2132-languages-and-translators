@@ -9,6 +9,10 @@ public class UnaryNode implements ASTNode {
     public static final int PARSE_INT   = 3;
     public static final int PRINT       = 4;
     public static final int PRINTLN     = 5;
+    public static final int NEGATION    = 6;
+    public static final int NOT         = 7;
+    public static final int RETURN      = 8;
+    public static final int ARG_ACCESS  = 9;
 
     public ASTNode child;
     public int code;

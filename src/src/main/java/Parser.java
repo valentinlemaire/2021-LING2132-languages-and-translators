@@ -226,25 +226,25 @@ public final class Parser extends Grammar {
     // SPECIAL FUNCTIONS
 
     // print and println
-    public rule print_in_line = seq(PRINT, word("("), expression.or_push_null(), word(")")).push($ -> new PrintNode($.$0()));
+    public rule print_in_line = seq(PRINT, word("("), expression.or_push_null(), word(")")).push($ -> new UnaryNode($.$0(), UnaryNode.PRINT));
 
-    public rule print_new_line = seq(PRINTLN, word("("), expression.or_push_null(), word(")")).push($ -> new PrintNode($.$0(), true));
+    public rule print_new_line = seq(PRINTLN, word("("), expression.or_push_null(), word(")")).push($ -> new UnaryNode($.$0(), UnaryNode.PRINTLN));
 
     public rule print = choice(print_in_line, print_new_line);
 
 
     // Parsing strings into integers
-    public rule parse_int = seq(INT, word("("), choice(string, any_value), word(")")).push($ -> new ParseIntNode($.$0()));
+    public rule parse_int = seq(INT, word("("), choice(string, any_value), word(")")).push($ -> new UnaryNode($.$0(), UnaryNode.PARSE_INT));
 
     // sort function
-    public rule sort = seq(SORT, word("("), choice(array, any_value), word(")")).push($ -> new SortNode($.$0()));
+    public rule sort = seq(SORT, word("("), choice(array, any_value), word(")")).push($ -> new UnaryNode($.$0(), UnaryNode.SORT));
 
     // EXTRAS
     // range function
-    // TODO
+    public rule range = seq(RANGE, word("("), choice(integer, any_value), word(")")).push($ -> new UnaryNode($.$0(), UnaryNode.RANGE));
 
     // indexer function (for map)
-    // TODO
+    public rule indexer = seq(INDEXER, word("("), choice(map, any_value), word(")")).push($ -> new UnaryNode($.$0(), UnaryNode.INDEXER));
 
 
     public rule statement = choice(variable_assignment, if_, while_, for_, function_def, print, return_, parse_int, sort);

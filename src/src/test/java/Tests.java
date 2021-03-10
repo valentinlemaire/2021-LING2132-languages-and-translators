@@ -205,28 +205,28 @@ public class Tests extends TestFixture {
     public void testPrint() {
         this.rule = parser.print;
         /* print */
-        successExpect("print(\"hello world\")", new PrintNode(new StringNode("hello world")));
-        successExpect("print(1)", new PrintNode(new IntegerNode(1)));
-        successExpect("print(3+4)", new PrintNode(new AddNode(new IntegerNode(3), new IntegerNode(4))));
-        successExpect("print ( True )", new PrintNode(new BoolNode(true)));
-        successExpect("print()", new PrintNode(null));
+        successExpect("print(\"hello world\")", new UnaryNode(new StringNode("hello world"), UnaryNode.PRINT));
+        successExpect("print(1)", new UnaryNode(new IntegerNode(1), UnaryNode.PRINT));
+        successExpect("print(3+4)", new UnaryNode(new AddNode(new IntegerNode(3), new IntegerNode(4)), UnaryNode.PRINT));
+        successExpect("print ( True )", new UnaryNode(new BoolNode(true), UnaryNode.PRINT));
+        successExpect("print()", new UnaryNode(null, UnaryNode.PRINT));
         failure("print())");
         /* println */
-        successExpect("println(\"hello world\")", new PrintNode(new StringNode("hello world"), true));
-        successExpect("println(1)", new PrintNode(new IntegerNode(1), true));
-        successExpect("println(3+4)", new PrintNode(new AddNode(new IntegerNode(3), new IntegerNode(4)), true));
-        successExpect("println ( True )", new PrintNode(new BoolNode(true), true));
-        successExpect("println()", new PrintNode(null, true));
+        successExpect("println(\"hello world\")", new UnaryNode(new StringNode("hello world"), UnaryNode.PRINTLN));
+        successExpect("println(1)", new UnaryNode(new IntegerNode(1), UnaryNode.PRINTLN));
+        successExpect("println(3+4)", new UnaryNode(new AddNode(new IntegerNode(3), new IntegerNode(4)), UnaryNode.PRINTLN));
+        successExpect("println ( True )", new UnaryNode(new BoolNode(true), UnaryNode.PRINTLN));
+        successExpect("println()", new UnaryNode(null, UnaryNode.PRINTLN));
         failure("println(,)");
     }
 
     @Test
     public void testParseInt() {
         this.rule = parser.parse_int;
-        successExpect("int(\"1\")", new ParseIntNode(new StringNode("1")));
-        successExpect("int (\t\"122\")", new ParseIntNode(new StringNode("122")));
-        successExpect("int(\"hello\")", new ParseIntNode(new StringNode("hello")));
-        successExpect("int(fun(3, \"hello\"))", new ParseIntNode(new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello")))));
+        successExpect("int(\"1\")", new UnaryNode(new StringNode("1"), UnaryNode.PARSE_INT));
+        successExpect("int (\t\"122\")", new UnaryNode(new StringNode("122"), UnaryNode.PARSE_INT));
+        successExpect("int(\"hello\")", new UnaryNode(new StringNode("hello"), UnaryNode.PARSE_INT));
+        successExpect("int(fun(3, \"hello\"))", new UnaryNode(new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello"))), UnaryNode.PARSE_INT));
         failure("int(3)");
         failure("inte ()");
         failure("int()");
@@ -236,10 +236,30 @@ public class Tests extends TestFixture {
     @Test
     public void sortTest() {
         this.rule = parser.sort;
-        successExpect("sort([1, 2, \"ab\"])", new SortNode(new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2), new StringNode("ab")))));
-        successExpect("sort  (\tfun(3, \"hello\"))", new SortNode(new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello")))));
+        successExpect("sort([1, 2, \"ab\"])", new UnaryNode(new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2), new StringNode("ab"))), UnaryNode.SORT));
+        successExpect("sort  (\tfun(3, \"hello\"))", new UnaryNode(new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello"))), UnaryNode.SORT));
         failure("sort()");
         failure("sort");
         failure("sort(3)");
+    }
+
+    @Test
+    public void rangeTest() {
+        this.rule = parser.range;
+        successExpect("range(3)", new UnaryNode(new IntegerNode(3), UnaryNode.RANGE));
+        successExpect("range\t( fun(3, \"hello\"))", new UnaryNode(new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello"))), UnaryNode.RANGE));
+        failure("range()");
+        failure("range");
+        failure("range([1, 2])");
+    }
+
+    @Test
+    public void indexerTest() {
+        this.rule = parser.indexer;
+        successExpect("indexer({\"a\" : 2})", new UnaryNode(new MapNode(Arrays.asList(new PairNode(new StringNode("a"), new IntegerNode(2)))), UnaryNode.INDEXER));
+        successExpect("indexer\t( fun(3, \"hello\"))", new UnaryNode(new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello"))), UnaryNode.INDEXER));
+        failure("indexer()");
+        failure("indexer");
+        failure("indexer([1, 2])");
     }
 }

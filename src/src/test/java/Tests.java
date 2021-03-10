@@ -101,6 +101,10 @@ public class Tests extends TestFixture {
         successExpect("True or False", new BinaryNode(new BoolNode(true), new BoolNode(false), BinaryNode.OR));
         successExpect("(1+1 == 2) and True", new BinaryNode(new BinaryNode(new BinaryNode(new IntegerNode(1), new IntegerNode(1), BinaryNode.ADD), new IntegerNode(2), BinaryNode.EQ), new BoolNode(true), BinaryNode.AND));
         successExpect("b != False", new BinaryNode(new IdentifierNode("b"), new BoolNode(false), BinaryNode.NEQ));
+        successExpect("a and b or c", new BinaryNode(new BinaryNode(new IdentifierNode("a"), new IdentifierNode("b"), BinaryNode.AND),new IdentifierNode("c"), BinaryNode.OR));
+        successExpect("a or b and c", new BinaryNode(new IdentifierNode("a"), new BinaryNode(new IdentifierNode("b"), new IdentifierNode("c"), BinaryNode.AND), BinaryNode.OR));
+
+        successExpect("1+1 < 2 and True or b == (not False) and True", new BinaryNode(new BinaryNode(new BinaryNode(new BinaryNode(new IntegerNode(1), new IntegerNode(1), BinaryNode.ADD), new IntegerNode(2), BinaryNode.L), new BoolNode(true), BinaryNode.AND), new BinaryNode(new BinaryNode(new IdentifierNode("b"), new UnaryNode(new BoolNode(false), UnaryNode.NOT), BinaryNode.EQ), new BoolNode(true), BinaryNode.AND), BinaryNode.OR));//new BinaryNode(new BinaryNode(new BinaryNode(, new BoolNode(true), BinaryNode.AND), new IdentifierNode("b"), BinaryNode.OR), new BinaryNode(new UnaryNode(new BoolNode(false), UnaryNode.NOT), new BoolNode(true), BinaryNode.AND), BinaryNode.EQ));
     }
 
     @Test
@@ -109,7 +113,7 @@ public class Tests extends TestFixture {
         successExpect("not a", new UnaryNode(new IdentifierNode("a"), UnaryNode.NOT));
         successExpect("not True", new UnaryNode(new BoolNode(true), UnaryNode.NOT));
         successExpect("not (a < b)", new UnaryNode(new BinaryNode(new IdentifierNode("a"), new IdentifierNode("b"), BinaryNode.L), UnaryNode.NOT));
-        successExpect("not a and b", new BinaryNode(new UnaryNode(new IdentifierNode("a"), UnaryNode.NOT), new IdentifierNode("b"), BinaryNode.AND));
+        failure("not a and b");
     }
 
     @Test

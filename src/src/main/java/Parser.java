@@ -134,33 +134,35 @@ public final class Parser extends Grammar {
             .infix(word("=="), $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.EQ))
             .infix(word("<="), $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.LEQ))
             .infix(word(">="), $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.GEQ))
-            .infix(word("!="), $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.NEQ))
-            .requireOperator())
+            .infix(word("!="), $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.NEQ)))
             .word();
 
 
     // Logical operations
-    public rule logical_operation = lazy(() -> left_expression()
-            .operand(this.bool_operator)
-            .infix(AND, $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.AND))
-            .infix(OR,  $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.OR)))
+    public rule and_operation = lazy(() -> left_expression()
+            .operand(comparison)
+            .infix(AND, $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.AND)))
             .word();
 
-    // Basic operands without operations and brackets
-    public rule primary_bool_operator = lazy(() -> choice(comparison, logical_operation));
+
+    public rule or_operation = lazy(() -> left_expression()
+            .operand(and_operation)
+            .infix(OR, $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.OR)))
+            .word();
+
 
     // Handling of brackets
-    public rule bracketed_primary_bool_operator = lazy(() -> seq(word("("), this.bool, word(")")));
+    public rule bracketed_primary_bool_operator = lazy(() -> seq(word("("), choice(or_operation, this.logical_negation), word(")")));
 
     // Used inside boolean operations
-    public rule bool_operator = lazy(() -> choice(bracketed_primary_bool_operator, this.logical_negation, boolean_values, any_value));
+    public rule bool_operator = lazy(() -> choice(bracketed_primary_bool_operator, any_value, boolean_values));
 
     // Logical Negation
     public rule logical_negation = seq(NOT, bool_operator)
                                     .push($ -> new UnaryNode($.$0(), UnaryNode.NOT));
 
     // Final boolean expression
-    public rule bool = lazy(() -> choice(primary_bool_operator, bracketed_primary_bool_operator));
+    public rule bool = lazy(() -> choice(or_operation, logical_negation, bracketed_primary_bool_operator));
 
 
     // OBJECT DECLARATIONS (arrays and maps)

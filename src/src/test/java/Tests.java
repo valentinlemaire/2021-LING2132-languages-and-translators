@@ -186,6 +186,8 @@ public class Tests extends TestFixture {
         this.rule = parser.for_;
         successExpect("for i in b: x = 1 end", new ForNode(new IdentifierNode("i"), new IdentifierNode("b"), Arrays.asList(new BinaryNode(new IdentifierNode("x"), new IntegerNode(1), BinaryNode.VAR_ASSGNMT))));
         successExpect("for i in [1, 2, 3]: x = 1 end", new ForNode(new IdentifierNode("i"), new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2), new IntegerNode(3))), Arrays.asList(new BinaryNode(new IdentifierNode("x"), new IntegerNode(1), BinaryNode.VAR_ASSGNMT))));
+        successExpect("for i in range(10): x = 1 end", new ForNode(new IdentifierNode("i"), new UnaryNode(new IntegerNode(10), UnaryNode.RANGE), Arrays.asList(new BinaryNode(new IdentifierNode("x"), new IntegerNode(1), BinaryNode.VAR_ASSGNMT))));
+        successExpect("for i in indexer([1, 2, 3]): x = 1 end", new ForNode(new IdentifierNode("i"), new UnaryNode(new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2), new IntegerNode(3))), UnaryNode.INDEXER), Arrays.asList(new BinaryNode(new IdentifierNode("x"), new IntegerNode(1), BinaryNode.VAR_ASSGNMT))));
         failure("for i in \"hello\": x = 1 end");
         failure("for i in b: x = 1");
         failure("for i b : x = 1 end");
@@ -262,8 +264,8 @@ public class Tests extends TestFixture {
         this.rule = parser.indexer;
         successExpect("indexer({\"a\" : 2})", new UnaryNode(new MapNode(Arrays.asList(new BinaryNode(new StringNode("a"), new IntegerNode(2), BinaryNode.PAIR))), UnaryNode.INDEXER));
         successExpect("indexer\t( fun(3, \"hello\"))", new UnaryNode(new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello"))), UnaryNode.INDEXER));
+        successExpect("indexer([1, 2])", new UnaryNode(new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2))), UnaryNode.INDEXER));
         failure("indexer()");
         failure("indexer");
-        failure("indexer([1, 2])");
     }
 }

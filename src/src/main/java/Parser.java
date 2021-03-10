@@ -205,9 +205,16 @@ public final class Parser extends Grammar {
 
     public rule map = seq(LBRACE, map_elements_list, RBRACE).push($ -> new MapNode($.$0()));
 
+    // EXTRAS
+    // range function
+    public rule range = seq(RANGE, LPAREN, choice(integer, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.RANGE));
+
+    // indexer function (for map)
+    public rule indexer = seq(INDEXER, LPAREN, choice(map, array, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.INDEXER));
+
 
     // Regrouping expressions
-    public rule expression = choice(numerical_operation, string, map, array, bool, NONE);
+    public rule expression = choice(numerical_operation, string, map, array, bool, range, indexer, NONE);
 
     // STATEMENTS
 
@@ -239,7 +246,7 @@ public final class Parser extends Grammar {
 
 
     // for (EXTRA)
-    public rule for_ = lazy(() -> seq(FOR, identifier, IN, choice(any_value, array), COLON, this.statement_sequence, END)) // TODO add range and indexer
+    public rule for_ = lazy(() -> seq(FOR, identifier, IN, choice(any_value, array, range, indexer), COLON, this.statement_sequence, END))
                             .push($ -> new ForNode($.$0(), $.$1(), $.$2()));
 
     // Function definition
@@ -261,13 +268,6 @@ public final class Parser extends Grammar {
 
     // sort function
     public rule sort = seq(SORT, LPAREN, choice(array, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.SORT));
-
-    // EXTRAS
-    // range function
-    public rule range = seq(RANGE, LPAREN, choice(integer, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.RANGE));
-
-    // indexer function (for map)
-    public rule indexer = seq(INDEXER, LPAREN, choice(map, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.INDEXER));
 
 
     public rule statement = choice(variable_assignment, if_, while_, for_, function_def, print, return_, parse_int, sort);

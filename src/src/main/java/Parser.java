@@ -184,7 +184,7 @@ public final class Parser extends Grammar {
 
 
     // Regrouping expressions
-    public rule expression = choice(numerical_operation, string, map, array, bool);
+    public rule expression = choice(numerical_operation, string, map, array, bool, NONE);
 
     // STATEMENTS
 
@@ -246,7 +246,7 @@ public final class Parser extends Grammar {
     // TODO
 
 
-    public rule statement = choice(variable_assignment, if_, while_, function_def, print, return_);
+    public rule statement = choice(variable_assignment, if_, while_, function_def, print, return_, parse_int, sort);
 
     public rule statement_sequence = choice(statement, line_comment, expression).at_least(0).push(ActionContext::$list);
 

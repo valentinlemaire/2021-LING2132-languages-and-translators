@@ -86,7 +86,10 @@ public final class Parser extends Grammar {
             .suffix(seq(word("["), this.expression, word("]")), $ -> new IndexerAccessNode($.$0(), $.$1())));
 
 
-    public rule any_value = choice(multiple_indexer_access, function_call, identifier);
+    // Program arguments
+    public rule program_args = lazy(() -> seq(ARGS, word("["), this.expression, word("]")).push($ -> new ArgAccessNode($.$0())));
+
+    public rule any_value = choice(multiple_indexer_access, function_call, program_args, identifier);
 
     // NUMERICAL OPERATIONS
 
@@ -164,20 +167,24 @@ public final class Parser extends Grammar {
 
     // Array declaration
     public rule full_array = seq(word("["), list.or_push_null(), word("]")).push($ -> new ArrayNode((List<ASTNode>) $.$0()));
+
     public rule empty_array = seq(word("["), word(":"), numerical_operation, word("]")).push($ -> new ArrayNode((ASTNode) $.$0()));
+
     public rule array = choice(full_array, empty_array);
 
     // Map declaration
     public rule map_element = lazy(() -> seq(this.expression, word(":"), this.expression)).push($ -> new PairNode($.$0(), $.$1()));
+
     public rule map_elements_list = lazy(() -> left_expression()
             .operand(this.map_element)
-            .infix(word(","))).push(ActionContext::$list);
+            .infix(word(",")))
+            .push(ActionContext::$list);
+
     public rule map = seq(word("{"), map_elements_list, word("}")).push($ -> new MapNode($.$0()));
 
 
     // Regrouping expressions
-    public rule expression = choice(numerical_operation, string, bool); // TODO : add array and map declarations
-
+    public rule expression = choice(numerical_operation, string, map, array, bool);
 
     // STATEMENTS
 
@@ -219,11 +226,11 @@ public final class Parser extends Grammar {
 
     // print and println
     public rule print_in_line = seq(PRINT, word("("), expression.or_push_null(), word(")")).push($ -> new PrintNode($.$0()));
+
     public rule print_new_line = seq(PRINTLN, word("("), expression.or_push_null(), word(")")).push($ -> new PrintNode($.$0(), true));
+
     public rule print = choice(print_in_line, print_new_line);
 
-    // Program arguments
-    // TODO
 
     // Parsing strings into integers
     public rule parse_int = seq(INT, word("("), choice(string, any_value), word(")")).push($ -> new ParseIntNode($.$0()));

@@ -215,4 +215,14 @@ public class Tests extends TestFixture {
         failure("int()");
         failure("int(True)");
     }
+
+    @Test
+    public void sortTest() {
+        this.rule = parser.sort;
+        successExpect("sort([1, 2, \"ab\"])", new SortNode(new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2), new StringNode("ab")))));
+        successExpect("sort  (\tfun(3, \"hello\"))", new SortNode(new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello")))));
+        failure("sort()");
+        failure("sort");
+        failure("sort(3)");
+    }
 }

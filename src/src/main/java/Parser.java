@@ -44,6 +44,7 @@ public final class Parser extends Grammar {
     public rule INDEXER = reserved("indexer");
     public rule RETURN  = reserved("return");
     public rule SORT    = reserved("sort");
+    public rule INT     = reserved("int");
     public rule ARGS    = reserved("args");
     public rule NOT     = reserved("not");
     public rule AND     = reserved("and");
@@ -225,7 +226,10 @@ public final class Parser extends Grammar {
     // TODO
 
     // Parsing strings into integers
-    public rule parse_int = seq(word("int"), word("("), choice(string, any_value), word(")")).push($ -> new ParseIntNode($.$0()));
+    public rule parse_int = seq(INT, word("("), choice(string, any_value), word(")")).push($ -> new ParseIntNode($.$0()));
+
+    // sort function
+    public rule sort = seq(SORT, word("("), choice(array, any_value), word(")")).push($ -> new SortNode($.$0()));
 
     // EXTRAS
     // range function

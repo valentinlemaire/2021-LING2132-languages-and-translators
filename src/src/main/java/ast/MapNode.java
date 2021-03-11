@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.Objects;
 
 public class MapNode implements ASTNode{
-    public List<PairNode> elements;
+    public List<BinaryNode> elements;
 
-    public MapNode(List<PairNode> elements) {
+    public MapNode(List<BinaryNode> elements) {
         this.elements = elements;
     }
 

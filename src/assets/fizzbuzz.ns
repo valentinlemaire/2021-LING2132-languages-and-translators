@@ -11,7 +11,7 @@ def fizzbuzz(n) :
             b = True
             print("Buzz")
         end
-        if !b :
+        if not b :
             print(i)
         end
 

@@ -1,6 +1,3 @@
-import norswap.autumn.Autumn;
-import norswap.autumn.Parse;
-import norswap.autumn.ParseOptions;
 import norswap.autumn.ParseResult;
 
 import java.io.IOException;
@@ -12,17 +9,15 @@ public class FileTests {
 
         String[] files = new String[] {"assets/fibonacci.ns", "assets/fizzbuzz.ns", "assets/integers.ns", "assets/primes.ns", "assets/strings.ns"};
 
-        for (String path : files) {
+        for (int i = 0; i < files.length; i++) {
             try {
-                Path file = Path.of(path);
+                Path file = Path.of(files[i]);
 
                 String content = Files.readString(file);
 
-                Parser parser = new Parser();
-                ParseOptions options = ParseOptions.wellFormednessCheck(true).trace(true).recordCallStack(true).get();
-                ParseResult res = Autumn.parse(parser, content, options);
-
-                System.out.println(path+" : "+res.toString());
+                NSParser parser = new NSParser();
+                System.out.println("Test "+(i+1)+"/"+files.length+" : "+files[i]);
+                ParseResult res = parser.parse(content);
 
             } catch (IOException e) {
                 System.err.println("Error reading file.");

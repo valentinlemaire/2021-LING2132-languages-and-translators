@@ -7,9 +7,9 @@ import java.util.Arrays;
 import java.util.List;
 
 
-public class Tests extends TestFixture {
+public class UnitTests extends TestFixture {
 
-    Parser parser = new Parser();
+    NSParser parser = new NSParser();
 
     @Test
     public void testNumericalValue() {
@@ -264,4 +264,5 @@ public class Tests extends TestFixture {
         failure("indexer()");
         failure("indexer");
     }
+
 }

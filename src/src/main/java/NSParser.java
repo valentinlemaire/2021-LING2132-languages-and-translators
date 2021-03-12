@@ -9,7 +9,7 @@ import ast.*;
 
 import java.util.List;
 
-public final class Parser extends Grammar {
+public final class NSParser extends Grammar {
 
     public rule NEWLINE = str("\n");
     public rule HASH    = str("#");

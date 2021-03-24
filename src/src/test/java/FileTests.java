@@ -7,11 +7,11 @@ import java.nio.file.Path;
 public class FileTests {
     public static void main(String[] args) {
 
-        String[] files = new String[] {"assets/fibonacci.ns", "assets/fizzbuzz.ns", "assets/integers.ns", "assets/primes.ns", "assets/strings.ns"};
+        String[] files = new String[] {"fibonacci.ns", "fizzbuzz.ns", "integers.ns", "primes.ns", "strings.ns"};
 
         for (int i = 0; i < files.length; i++) {
             try {
-                Path file = Path.of(files[i]);
+                Path file = Path.of("src/assets/"+files[i]);
 
                 String content = Files.readString(file);
 

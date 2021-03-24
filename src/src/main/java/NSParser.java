@@ -295,9 +295,9 @@ public final class NSParser extends Grammar {
             System.out.println(result.toString());
         } else {
             // debugging
-            System.out.println(result.toString(new LineMapString(input), false, "<input>"));
+            System.out.println(result.toString(new LineMapString("name", input), false));
             // for users
-            System.out.println(result.userErrorString(new LineMapString(input), "<input>"));
+            System.out.println(result.userErrorString(new LineMapString("name", input)));
         }
         return result;
     }

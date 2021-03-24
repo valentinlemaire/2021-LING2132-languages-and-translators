@@ -45,7 +45,6 @@ public final class SemanticAnalysis {
 
         SemanticAnalysis analysis = new SemanticAnalysis(reactor);
 
-        // expressions
 
 
         walker.registerFallback(POST_VISIT, node -> {});

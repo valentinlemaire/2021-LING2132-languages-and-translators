@@ -46,8 +46,16 @@ public final class SemanticAnalysis {
         SemanticAnalysis analysis = new SemanticAnalysis(reactor);
 
         // expressions
+        walker.register(IntegerNode.class,      PRE_VISIT,  analysis::integer);
+
+        // types
+
+        // declarations & scopes
+
+        // statements
 
 
+        walker.registerFallback(PRE_VISIT,  node -> {});
         walker.registerFallback(POST_VISIT, node -> {});
 
         return walker;
@@ -57,6 +65,10 @@ public final class SemanticAnalysis {
     // =============================================================================================
     // region [Expressions]
     // =============================================================================================
+    private void integer (IntegerNode node) {
+        R.set(node, "type", Types.INTEGER);
+    }
+
     // endregion
     // =============================================================================================
     // region [Binary Expressions]

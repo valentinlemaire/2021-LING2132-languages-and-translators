@@ -233,7 +233,7 @@ public final class NSParser extends Grammar {
                                         .infix(EQUAL)
                                         .right(expression)
                                         .requireOperator()
-                                        .push($ -> new BinaryNode($.$0(), $.$1(), BinaryNode.VAR_ASSGNMT));
+                                        .push($ -> new VarAssignmentNode($.$0(), $.$1()));
 
     // return statement
 
@@ -282,7 +282,7 @@ public final class NSParser extends Grammar {
     public rule statement_sequence = choice(statement, line_comment, expression).at_least(0).push(ActionContext::$list);
 
     // root parser
-    public rule root = statement_sequence;
+    public rule root = statement_sequence.push($ -> new RootNode($.$0()));
 
     @Override
     public rule root() {

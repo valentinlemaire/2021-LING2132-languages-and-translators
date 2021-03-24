@@ -22,8 +22,7 @@ public class BinaryNode implements ASTNode {
 
     public static final int PAIR        = 13;
 
-    public static final int VAR_ASSGNMT = 14;
-    public static final int IDX_ACCESS  = 15;
+    public static final int IDX_ACCESS  = 14;
 
     public ASTNode left;
     public ASTNode right;

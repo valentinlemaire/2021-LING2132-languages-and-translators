@@ -1,7 +1,8 @@
 package scopes;
 
-import ast.DeclarationNode;
-import ast.SighNode;
+import ast.ASTNode;
+import ast.VarAssignmentNode;
+
 import java.util.HashMap;
 
 /**
@@ -14,7 +15,7 @@ public class Scope
     /**
      * The AST node that introduces this scope.
      */
-    public final SighNode node;
+    public final ASTNode node;
 
     /**
      * The parent of this scope, which is the inermost lexically enclosing scope.
@@ -23,11 +24,11 @@ public class Scope
 
     // ---------------------------------------------------------------------------------------------
 
-    private final HashMap<String, DeclarationNode> declarations = new HashMap<>();
+    private final HashMap<String, VarAssignmentNode> declarations = new HashMap<>();
 
     // ---------------------------------------------------------------------------------------------
 
-    public Scope (SighNode node, Scope parent) {
+    public Scope (ASTNode node, Scope parent) {
         this.node = node;
         this.parent = parent;
     }
@@ -37,7 +38,7 @@ public class Scope
     /**
      * Adds a new declaration to this scope.
      */
-    public void declare (String identifier, DeclarationNode node) {
+    public void declare (String identifier, VarAssignmentNode node) {
         declarations.put(identifier, node);
     }
 
@@ -49,7 +50,7 @@ public class Scope
      */
     public DeclarationContext lookup (String name)
     {
-        DeclarationNode declaration = declarations.get(name);
+        VarAssignmentNode declaration = declarations.get(name);
         return declaration != null
                 ? new DeclarationContext(this, declaration)
                 : parent != null
@@ -63,7 +64,7 @@ public class Scope
      * Lookup the given name only in this scope, and return the corresponding declaration, or null
      * if not found.
      */
-    public DeclarationNode lookupLocal (String name) {
+    public VarAssignmentNode lookupLocal (String name) {
         return declarations.get(name);
     }
 

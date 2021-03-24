@@ -3,7 +3,7 @@ package ast;
 import java.util.List;
 import java.util.Objects;
 
-public class WhileNode implements ASTNode {
+public class WhileNode extends ASTNode {
     public ASTNode bool;
     public List<ASTNode> statements;
 

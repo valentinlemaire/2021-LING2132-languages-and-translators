@@ -2,7 +2,7 @@ package ast;
 
 import java.util.Objects;
 
-public class UnaryNode implements ASTNode {
+public class UnaryNode extends ASTNode {
     public static final int RANGE       = 0;
     public static final int INDEXER     = 1;
     public static final int SORT        = 2;

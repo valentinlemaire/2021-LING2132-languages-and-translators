@@ -1,7 +1,7 @@
 package ast;
 
 
-public class BoolNode implements ASTNode {
+public class BoolNode extends ASTNode {
 
     public boolean value;
 

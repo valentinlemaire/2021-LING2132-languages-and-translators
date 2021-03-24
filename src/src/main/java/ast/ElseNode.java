@@ -3,7 +3,7 @@ package ast;
 import java.util.List;
 import java.util.Objects;
 
-public class ElseNode implements ASTNode {
+public class ElseNode extends ASTNode {
     public ASTNode bool;
     public List<ASTNode> statements;
 

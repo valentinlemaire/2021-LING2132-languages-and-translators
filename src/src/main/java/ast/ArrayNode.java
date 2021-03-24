@@ -3,7 +3,7 @@ package ast;
 import java.util.List;
 import java.util.Objects;
 
-public class ArrayNode implements ASTNode{
+public class ArrayNode extends ASTNode{
     public List<ASTNode> elements;
     public ASTNode size;
 

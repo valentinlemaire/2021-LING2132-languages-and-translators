@@ -4,7 +4,7 @@ import ast.ASTNode;
 
 import java.util.Objects;
 
-public class VarAssignmentNode implements ASTNode {
+public class VarAssignmentNode extends ASTNode implements DeclarationNode {
     public ASTNode left;
     public ASTNode right;
     public int code;

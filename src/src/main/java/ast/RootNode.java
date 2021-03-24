@@ -3,7 +3,7 @@ package ast;
 import java.util.List;
 import java.util.Objects;
 
-public class RootNode implements ASTNode {
+public class RootNode extends ASTNode {
     public List<ASTNode> statements;
 
     public RootNode(List<ASTNode> statements) {

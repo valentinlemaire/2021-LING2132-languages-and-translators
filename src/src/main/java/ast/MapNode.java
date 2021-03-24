@@ -3,7 +3,7 @@ package ast;
 import java.util.List;
 import java.util.Objects;
 
-public class MapNode implements ASTNode{
+public class MapNode extends ASTNode {
     public List<BinaryNode> elements;
 
     public MapNode(List<BinaryNode> elements) {

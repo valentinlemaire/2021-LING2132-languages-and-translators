@@ -3,7 +3,7 @@ package ast;
 import java.util.List;
 import java.util.Objects;
 
-public class FunctionDefinitionNode implements ASTNode {
+public class FunctionDefinitionNode extends ASTNode implements DeclarationNode {
     public IdentifierNode name;
     public List<ASTNode> args;
     public List<ASTNode> statements;

@@ -5,11 +5,11 @@ import java.util.Objects;
 
 public class WhileNode extends ASTNode {
     public ASTNode bool;
-    public List<ASTNode> statements;
+    public BlockNode block;
 
-    public WhileNode(ASTNode bool, List<ASTNode> statements) {
+    public WhileNode(ASTNode bool, BlockNode block) {
         this.bool = bool;
-        this.statements = statements;
+        this.block = block;
     }
 
     @Override
@@ -17,6 +17,6 @@ public class WhileNode extends ASTNode {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         WhileNode whileNode = (WhileNode) o;
-        return Objects.equals(bool, whileNode.bool) && Objects.equals(statements, whileNode.statements);
+        return Objects.equals(bool, whileNode.bool) && Objects.equals(block, whileNode.block);
     }
 }

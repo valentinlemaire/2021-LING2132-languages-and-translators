@@ -6,12 +6,12 @@ import java.util.Objects;
 public class FunctionDefinitionNode extends ASTNode implements DeclarationNode {
     public IdentifierNode name;
     public List<ASTNode> args;
-    public List<ASTNode> statements;
+    public BlockNode block;
 
-    public FunctionDefinitionNode(IdentifierNode name, List<ASTNode> args, List<ASTNode> statements) {
+    public FunctionDefinitionNode(IdentifierNode name, List<ASTNode> args, BlockNode block) {
         this.name = name;
         this.args = args;
-        this.statements = statements;
+        this.block = block;
     }
 
     @Override
@@ -19,7 +19,7 @@ public class FunctionDefinitionNode extends ASTNode implements DeclarationNode {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FunctionDefinitionNode that = (FunctionDefinitionNode) o;
-        return Objects.equals(name, that.name) && Objects.equals(args, that.args) && Objects.equals(statements, that.statements);
+        return Objects.equals(name, that.name) && Objects.equals(args, that.args) && Objects.equals(block, that.block);
     }
 
 }

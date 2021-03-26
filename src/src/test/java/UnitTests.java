@@ -155,13 +155,13 @@ public class UnitTests extends AutumnTestFixture {
     @Test
     public void testIf() {
         this.rule = parser.if_;
-        successExpect("if True: x = 1 end", new IfNode(new BoolNode(true), Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))), Arrays.asList(new ASTNode[]{})));
+        successExpect("if True: x = 1 end", new IfNode(new BoolNode(true), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)))), Arrays.asList(new ASTNode[]{})));
         successExpect("if True: x = 1 elsif False: x = 2 elsif b: x = 3 else: x = 4 end",
-                new IfNode(new BoolNode(true), Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))),
+                new IfNode(new BoolNode(true), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)))),
                         Arrays.asList(
-                                new ElseNode(new BoolNode(false),  Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(2)))),
-                                new ElseNode(new IdentifierNode("b"), Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(3)))),
-                                new ElseNode(null, Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(4)))))));
+                                new ElseNode(new BoolNode(false),  new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(2))))),
+                                new ElseNode(new IdentifierNode("b"), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(3))))),
+                                new ElseNode(null, new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(4))))))));
         failure("if True:");
         failure("if True end");
         failure("if: end");
@@ -170,8 +170,8 @@ public class UnitTests extends AutumnTestFixture {
     @Test
     public void testWhile() {
         this.rule = parser.while_;
-        successExpect("while True: i = i+1 a = b end", new WhileNode(new BoolNode(true), Arrays.asList(new VarAssignmentNode(new IdentifierNode("i"), new BinaryNode(new IdentifierNode("i"), new IntegerNode(1), BinaryNode.ADD)), new VarAssignmentNode(new IdentifierNode("a"), new IdentifierNode("b")))));
-        successExpect("while b: end", new WhileNode(new IdentifierNode("b"), Arrays.asList(new ASTNode[]{})));
+        successExpect("while True: i = i+1 a = b end", new WhileNode(new BoolNode(true), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("i"), new BinaryNode(new IdentifierNode("i"), new IntegerNode(1), BinaryNode.ADD)), new VarAssignmentNode(new IdentifierNode("a"), new IdentifierNode("b"))))));
+        successExpect("while b: end", new WhileNode(new IdentifierNode("b"), new BlockNode(Arrays.asList(new ASTNode[]{}))));
         failure("while: a = b end");
         failure("while True a = b end");
         failure("while True: a = b");
@@ -180,10 +180,10 @@ public class UnitTests extends AutumnTestFixture {
     @Test
     public void testFor() {
         this.rule = parser.for_;
-        successExpect("for i in b: x = 1 end", new ForNode(new IdentifierNode("i"), new IdentifierNode("b"), Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)))));
-        successExpect("for i in [1, 2, 3]: x = 1 end", new ForNode(new IdentifierNode("i"), new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2), new IntegerNode(3))), Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)))));
-        successExpect("for i in range(10): x = 1 end", new ForNode(new IdentifierNode("i"), new UnaryNode(new IntegerNode(10), UnaryNode.RANGE), Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)))));
-        successExpect("for i in indexer([1, 2, 3]): x = 1 end", new ForNode(new IdentifierNode("i"), new UnaryNode(new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2), new IntegerNode(3))), UnaryNode.INDEXER), Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)))));
+        successExpect("for i in b: x = 1 end", new ForNode(new IdentifierNode("i"), new IdentifierNode("b"), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))))));
+        successExpect("for i in [1, 2, 3]: x = 1 end", new ForNode(new IdentifierNode("i"), new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2), new IntegerNode(3))), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))))));
+        successExpect("for i in range(10): x = 1 end", new ForNode(new IdentifierNode("i"), new UnaryNode(new IntegerNode(10), UnaryNode.RANGE), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))))));
+        successExpect("for i in indexer([1, 2, 3]): x = 1 end", new ForNode(new IdentifierNode("i"), new UnaryNode(new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2), new IntegerNode(3))), UnaryNode.INDEXER), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))))));
         failure("for i in \"hello\": x = 1 end");
         failure("for i in b: x = 1");
         failure("for i b : x = 1 end");
@@ -193,10 +193,10 @@ public class UnitTests extends AutumnTestFixture {
     @Test
     public void testFunctionDef() {
         this.rule = parser.function_def;
-        successExpect("def fun(a, b): x = 1 return 2 end", new FunctionDefinitionNode(new IdentifierNode("fun"), Arrays.asList(new IdentifierNode("a"), new IdentifierNode("b")), Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)), new UnaryNode(new IntegerNode(2), UnaryNode.RETURN))));
-        successExpect("def fun(a, b): x = 1 end", new FunctionDefinitionNode(new IdentifierNode("fun"), Arrays.asList(new IdentifierNode("a"), new IdentifierNode("b")), Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)))));
-        successExpect("def fun(): end", new FunctionDefinitionNode(new IdentifierNode("fun"), null, Arrays.asList(new ASTNode[]{})));
-        successExpect("def fun(): return end", new FunctionDefinitionNode(new IdentifierNode("fun"), null, Arrays.asList(new UnaryNode(null, UnaryNode.RETURN))));
+        successExpect("def fun(a, b): x = 1 return 2 end", new FunctionDefinitionNode(new IdentifierNode("fun"), Arrays.asList(new IdentifierNode("a"), new IdentifierNode("b")), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)), new UnaryNode(new IntegerNode(2), UnaryNode.RETURN)))));
+        successExpect("def fun(a, b): x = 1 end", new FunctionDefinitionNode(new IdentifierNode("fun"), Arrays.asList(new IdentifierNode("a"), new IdentifierNode("b")), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))))));
+        successExpect("def fun(): end", new FunctionDefinitionNode(new IdentifierNode("fun"), null, new BlockNode(Arrays.asList(new ASTNode[]{}))));
+        successExpect("def fun(): return end", new FunctionDefinitionNode(new IdentifierNode("fun"), null, new BlockNode(Arrays.asList(new UnaryNode(null, UnaryNode.RETURN)))));
         failure("def a[1](): end");
         failure("def fun: end");
         failure("fun(a,b): x = 1 end");

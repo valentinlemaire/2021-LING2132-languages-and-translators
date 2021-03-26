@@ -1,5 +1,6 @@
 package scopes;
 
+import ast.DeclarationNode;
 import ast.VarAssignmentNode;
 
 /**
@@ -8,9 +9,9 @@ import ast.VarAssignmentNode;
 public final class DeclarationContext
 {
     public final Scope scope;
-    public final VarAssignmentNode declaration;
+    public final DeclarationNode declaration;
 
-    public DeclarationContext(Scope scope, VarAssignmentNode declaration) {
+    public DeclarationContext(Scope scope, DeclarationNode declaration) {
         this.scope = scope;
         this.declaration = declaration;
     }

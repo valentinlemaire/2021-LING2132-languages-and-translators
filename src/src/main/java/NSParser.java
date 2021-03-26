@@ -279,7 +279,7 @@ public final class NSParser extends Grammar {
     // Regrouping statements
     public rule statement = choice(function_def, if_, while_, for_, print, return_, parse_int, variable_assignment);
 
-    public rule statement_sequence = choice(statement, line_comment, expression).at_least(0).push(ActionContext::$list);
+    public rule statement_sequence = choice(statement, line_comment, expression).at_least(0).push($ -> new BlockNode($.$list()));
 
     // root parser
     public rule root = statement_sequence.push($ -> new RootNode($.$0()));

@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 
 
-public class UnitTests extends AutumnTestFixture {
+public class ParserUnitTests extends AutumnTestFixture {
 
     NSParser parser = new NSParser();
 

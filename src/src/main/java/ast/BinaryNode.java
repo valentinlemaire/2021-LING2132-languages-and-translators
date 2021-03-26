@@ -14,9 +14,10 @@ public class BinaryNode implements ASTNode {
     public static final int AND         = 6;
 
     public static final int EQ          = 7;
-    public static final int LEQ         = 8;
-    public static final int GEQ         = 9;
-    public static final int NEQ         = 10;
+    public static final int NEQ         = 8;
+
+    public static final int LEQ         = 9;
+    public static final int GEQ         = 10;
     public static final int L           = 11;
     public static final int G           = 12;
 
@@ -42,4 +43,27 @@ public class BinaryNode implements ASTNode {
         return code == that.code && Objects.equals(left, that.left) && Objects.equals(right, that.right);
     }
 
+    public boolean isArithmeticOperation() {
+        return code >= ADD && code <= MOD;
+    }
+
+    public boolean isLogicOperation() {
+        return code == OR || code == AND;
+    }
+
+    public boolean isEqualityComparison() {
+        return code == EQ || code == NEQ;
+    }
+
+    public boolean isInequalityComparison() {
+        return code >= LEQ && code <= G;
+    }
+
+    public boolean isPair() {
+        return code == PAIR;
+    }
+
+    public boolean isIdxAccess() {
+        return code == IDX_ACCESS;
+    }
 }

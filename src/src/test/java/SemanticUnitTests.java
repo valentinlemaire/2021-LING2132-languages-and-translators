@@ -1,4 +1,4 @@
-import ast.ASTNode;
+import ast.*;
 import norswap.autumn.AutumnTestFixture;
 import norswap.autumn.positions.LineMapString;
 import norswap.uranium.Reactor;

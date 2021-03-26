@@ -1,3 +1,9 @@
+/*
+ * This code is heavily inspired by the example given by the teacher : Nicolas Laurent.
+ * His code can be found on GitHub
+ * [https://github.com/norswap/sigh/blob/master/src/norswap/sigh/SemanticAnalysis.java]
+ *
+ */
 import ast.*;
 import scopes.*;
 
@@ -47,8 +53,12 @@ public final class SemanticAnalysis {
 
         // expressions
         walker.register(IntegerNode.class,      PRE_VISIT,  analysis::integer);
-
-        // types
+        walker.register(StringNode.class,       PRE_VISIT,  analysis::string);
+        walker.register(IdentifierNode.class,   PRE_VISIT,  analysis::identifier);
+        walker.register(ArrayNode.class,        PRE_VISIT,  analysis::array);
+        walker.register(FunctionCallNode.class, PRE_VISIT,  analysis::functionCall);
+        walker.register(UnaryNode.class,        PRE_VISIT,  analysis::unaryExpression);
+        walker.register(BinaryNode.class,       PRE_VISIT,  analysis::binaryExpression);
 
         // declarations & scopes
 
@@ -65,9 +75,36 @@ public final class SemanticAnalysis {
     // =============================================================================================
     // region [Expressions]
     // =============================================================================================
-    private void integer (IntegerNode node) {
+    private void integer(IntegerNode node) {
         R.set(node, "type", Types.INTEGER);
     }
+
+    private void string(StringNode node) {
+        R.set(node, "type", Types.STRING);
+    }
+
+    private void identifier(IdentifierNode node) {
+        // TODO
+    }
+
+    private void array(ArrayNode node) {
+        // TODO
+    }
+
+    private void functionCall(FunctionCallNode node) {
+        // TODO
+    }
+
+    private void unaryExpression(UnaryNode node) {
+        // TODO implement node.isSomething() methods
+    }
+
+    private void binaryExpression(BinaryNode node) {
+        /* array access, arithmetic operations, ... */
+        // TODO compare using node.isArithmeticOperation() and other methods
+    }
+
+
 
     // endregion
     // =============================================================================================

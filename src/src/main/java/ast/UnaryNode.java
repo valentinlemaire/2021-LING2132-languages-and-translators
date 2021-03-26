@@ -30,4 +30,20 @@ public class UnaryNode implements ASTNode {
         UnaryNode node = (UnaryNode) o;
         return Objects.equals(this.child, node.child) && Objects.equals(this.code, node.code);
     }
+
+    public boolean isArray() {
+        return code == RANGE || code == INDEXER || code == SORT || code == ARG_ACCESS;
+    }
+
+    public boolean isInteger() {
+        return code == PARSE_INT || code == NEGATION || code == LEN;
+    }
+
+    public boolean isVoid() {
+        return code == PRINT || code == PRINTLN || code == RETURN;
+    }
+
+    public boolean isBool() {
+        return code == NOT;
+    }
 }

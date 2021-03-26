@@ -2,7 +2,7 @@ package ast;
 
 import java.util.Objects;
 
-public class BinaryNode implements ASTNode {
+public class BinaryNode extends ASTNode {
 
     public static final int ADD         = 0;
     public static final int SUB         = 1;

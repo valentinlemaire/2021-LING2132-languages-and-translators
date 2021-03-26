@@ -1,0 +1,3 @@
+public enum Type {
+    INTEGER, STRING, BOOLEAN, ARRAY, MAP, NONE, UNKOWN_TYPE
+}

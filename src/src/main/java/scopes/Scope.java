@@ -1,6 +1,7 @@
 package scopes;
 
 import ast.ASTNode;
+import ast.DeclarationNode;
 import ast.VarAssignmentNode;
 
 import java.util.HashMap;
@@ -24,7 +25,7 @@ public class Scope
 
     // ---------------------------------------------------------------------------------------------
 
-    private final HashMap<String, VarAssignmentNode> declarations = new HashMap<>();
+    private final HashMap<String, DeclarationNode> declarations = new HashMap<>();
 
     // ---------------------------------------------------------------------------------------------
 
@@ -38,7 +39,7 @@ public class Scope
     /**
      * Adds a new declaration to this scope.
      */
-    public void declare (String identifier, VarAssignmentNode node) {
+    public void declare (String identifier, DeclarationNode node) {
         declarations.put(identifier, node);
     }
 
@@ -50,7 +51,7 @@ public class Scope
      */
     public DeclarationContext lookup (String name)
     {
-        VarAssignmentNode declaration = declarations.get(name);
+        DeclarationNode declaration = declarations.get(name);
         return declaration != null
                 ? new DeclarationContext(this, declaration)
                 : parent != null
@@ -64,7 +65,7 @@ public class Scope
      * Lookup the given name only in this scope, and return the corresponding declaration, or null
      * if not found.
      */
-    public VarAssignmentNode lookupLocal (String name) {
+    public DeclarationNode lookupLocal (String name) {
         return declarations.get(name);
     }
 

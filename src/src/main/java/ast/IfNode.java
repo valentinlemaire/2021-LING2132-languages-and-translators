@@ -3,14 +3,14 @@ package ast;
 import java.util.List;
 import java.util.Objects;
 
-public class IfNode implements ASTNode {
+public class IfNode extends ASTNode {
     public ASTNode bool;
-    public List<ASTNode> statements;
+    public BlockNode block;
     public List<ASTNode> else_blocks;
 
-    public IfNode(ASTNode bool, List<ASTNode> statements, List<ASTNode> else_blocks) {
+    public IfNode(ASTNode bool, BlockNode block, List<ASTNode> else_blocks) {
         this.bool = bool;
-        this.statements = statements;
+        this.block = block;
         this.else_blocks = else_blocks;
     }
 
@@ -19,6 +19,6 @@ public class IfNode implements ASTNode {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         IfNode ifNode = (IfNode) o;
-        return Objects.equals(bool, ifNode.bool) && Objects.equals(statements, ifNode.statements) && Objects.equals(else_blocks, ifNode.else_blocks);
+        return Objects.equals(bool, ifNode.bool) && Objects.equals(block, ifNode.block) && Objects.equals(else_blocks, ifNode.else_blocks);
     }
 }

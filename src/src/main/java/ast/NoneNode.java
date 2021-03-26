@@ -1,6 +1,6 @@
 package ast;
 
-public class NoneNode implements ASTNode {
+public class NoneNode extends ASTNode {
     public NoneNode() {}
 
     @Override

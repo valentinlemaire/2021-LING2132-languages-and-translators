@@ -20,17 +20,17 @@ public final class RootScope extends Scope
     }
 
     // root scope variables
-    public final SyntheticDeclarationNode _true  = decl("True",  VARIABLE);
-    public final SyntheticDeclarationNode _false = decl("False", VARIABLE);
-    public final SyntheticDeclarationNode _none  = decl("None",  VARIABLE);
+    public final SyntheticDeclarationNode _true   = decl("True",    VARIABLE);
+    public final SyntheticDeclarationNode _false  = decl("False",   VARIABLE);
+    public final SyntheticDeclarationNode _none   = decl("None",    VARIABLE);
 
-    public final SyntheticDeclarationNode _args = decl("args", VARIABLE);
+    public final SyntheticDeclarationNode _args   = decl("args",    VARIABLE);
 
     // root scope functions
-    public final SyntheticDeclarationNode print = decl("print", FUNCTION);
+    public final SyntheticDeclarationNode print   = decl("print",   FUNCTION);
     public final SyntheticDeclarationNode println = decl("println", FUNCTION);
-    public final SyntheticDeclarationNode sort = decl("sort", FUNCTION);
-    public final SyntheticDeclarationNode range = decl("range", FUNCTION);
+    public final SyntheticDeclarationNode sort    = decl("sort",    FUNCTION);
+    public final SyntheticDeclarationNode range   = decl("range",   FUNCTION);
     public final SyntheticDeclarationNode indexer = decl("indexer", FUNCTION);
 
     // ---------------------------------------------------------------------------------------------

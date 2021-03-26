@@ -1,6 +1,6 @@
 package ast;
 
-public class IntegerNode implements ASTNode {
+public class IntegerNode extends ASTNode {
     public int value;
     public IntegerNode(int v) {
         this.value = v;

@@ -3,11 +3,11 @@ package ast;
 import java.util.List;
 import java.util.Objects;
 
-public class RootNode implements ASTNode {
-    public List<ASTNode> statements;
+public class RootNode extends ASTNode {
+    public BlockNode block;
 
-    public RootNode(List<ASTNode> statements) {
-        this.statements = statements;
+    public RootNode(BlockNode block) {
+        this.block = block;
     }
 
     @Override
@@ -15,6 +15,6 @@ public class RootNode implements ASTNode {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RootNode rootNode = (RootNode) o;
-        return Objects.equals(statements, rootNode.statements);
+        return Objects.equals(block, rootNode.block);
     }
 }

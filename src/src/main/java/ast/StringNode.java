@@ -1,6 +1,6 @@
 package ast;
 
-public class StringNode implements ASTNode {
+public class StringNode extends ASTNode {
     public String value;
 
     public StringNode(String v) {

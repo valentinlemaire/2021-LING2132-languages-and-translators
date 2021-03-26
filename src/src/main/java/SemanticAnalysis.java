@@ -92,11 +92,11 @@ public final class SemanticAnalysis {
     // region [Expressions]
     // =============================================================================================
     private void integer(IntegerNode node) {
-        R.set(node, "type", Types.INTEGER);
+        R.set(node, "type", Type.INTEGER);
     }
 
     private void string(StringNode node) {
-        R.set(node, "type", Types.STRING);
+        R.set(node, "type", Type.STRING);
     }
 
     private void identifier(IdentifierNode node) {

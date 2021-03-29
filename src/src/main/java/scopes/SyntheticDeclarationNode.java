@@ -1,6 +1,7 @@
 package scopes;
 
 import ast.BinaryNode;
+import ast.DeclarationNode;
 import ast.VarAssignmentNode;
 
 import java.util.Locale;
@@ -12,13 +13,13 @@ import java.util.Locale;
  *
  * <p>At present, all such declarations are unconditionally introduced in the {@link RootScope}.
  */
-public final class SyntheticDeclarationNode extends VarAssignmentNode
+public final class SyntheticDeclarationNode implements DeclarationNode
 {
     private final String name;
     private final DeclarationKind kind;
 
     public SyntheticDeclarationNode(String name, DeclarationKind kind) {
-        super(null, null);
+        //super(null, null);
         this.name = name;
         this.kind = kind;
     }

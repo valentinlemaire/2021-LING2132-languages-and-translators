@@ -6,6 +6,7 @@
  */
 import ast.*;
 import norswap.uranium.Attribute;
+import norswap.uranium.SemanticError;
 import scopes.*;
 
 import norswap.uranium.Reactor;
@@ -120,9 +121,7 @@ public final class SemanticAnalysis {
             R.rule(node, "type")
                     .using(maybeCtx.declaration, "type")
                     .by(Rule::copyFirst);
-            return;
         }
-
     }
 
     private void array(ArrayNode node) {
@@ -194,8 +193,6 @@ public final class SemanticAnalysis {
                         r.error("If statement must have a boolean as condition", node);
                     }
                 });
-
-
     }
 
     public void while_(WhileNode node) {
@@ -204,7 +201,7 @@ public final class SemanticAnalysis {
                 .by(r -> {
                     Type conditionType = r.get(0);
                     if (!(conditionType == Type.BOOLEAN || conditionType == Type.UNKOWN_TYPE)) {
-                        r.error("If statement must have a boolean as condition", node);
+                        r.error("While statement must have a boolean as condition", node);
                     }
                 });
     }

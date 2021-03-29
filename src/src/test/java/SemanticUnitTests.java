@@ -44,17 +44,24 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput(   "def fun(a, b):\n" +
                         "   c = b\n" +
                         "end");
-        failureAt(new RootNode(new BlockNode(Arrays.asList(new FunctionDefinitionNode(new IdentifierNode("fun"), Arrays.asList(new ParameterNode(new IdentifierNode("a")), new ParameterNode(new IdentifierNode("b"))), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("c"), new IdentifierNode("d")))))))), new IdentifierNode("d"));
+
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                new FunctionDefinitionNode(new IdentifierNode("fun"), Arrays.asList(new ParameterNode(new IdentifierNode("a")), new ParameterNode(new IdentifierNode("b"))), new BlockNode(Arrays.asList(
+                        new VarAssignmentNode(new IdentifierNode("c"), new IdentifierNode("d")))))))),
+                new IdentifierNode("d"));
+
         successInput(   "d = 1\n" +
                         "def fun(a, b):\n" +
                         "   c = d\n" +
                         "end");
+
         failureAt(new RootNode(new BlockNode(Arrays.asList(
                         new FunctionDefinitionNode(new IdentifierNode("fun"), Arrays.asList(new ParameterNode(new IdentifierNode("a")), new ParameterNode(new IdentifierNode("b"))),
                                 new BlockNode(Arrays.asList(
                                         new VarAssignmentNode(new IdentifierNode("c"), new IdentifierNode("d"))))),
                         new VarAssignmentNode(new IdentifierNode("d"), new IntegerNode(1))))),
                   new IdentifierNode("d"));
+
         successInput(   "def fun(a, b):\n" +
                         "   a = b\n" +
                         "end");
@@ -73,6 +80,28 @@ public class SemanticUnitTests extends UraniumTestFixture {
                         "else:\n" +
                         "   a = 2\n" +
                         "end");
+    }
+
+    @Test public void testWhileLoop() {
+        failureAt(  new RootNode(new BlockNode(Arrays.asList(
+                new WhileNode(new IntegerNode(2), new BlockNode(Arrays.asList(
+                        new VarAssignmentNode(new IdentifierNode("a"), new IntegerNode(2)))))))),
+                new WhileNode(new IntegerNode(2), new BlockNode(Arrays.asList(
+                        new VarAssignmentNode(new IdentifierNode("a"), new IntegerNode(2))))
+                ));
+
+        successInput(   "while True:\n" +
+                        "   a = 1\n" +
+                        "end");
+
+        successInput(   "a = False\n" +
+                        "while a:\n" +
+                        "   a = 1\n" +
+                        "end");
+    }
+
+    @Test public void testForLoop() {
+        // TODO
     }
 
 }

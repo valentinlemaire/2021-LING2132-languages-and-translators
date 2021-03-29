@@ -12,8 +12,7 @@ public class UnaryNode extends ASTNode {
     public static final int NEGATION    = 6;
     public static final int NOT         = 7;
     public static final int RETURN      = 8;
-    public static final int ARG_ACCESS  = 9;
-    public static final int LEN         = 10;
+    public static final int LEN         = 9;
 
     public ASTNode child;
     public int code;
@@ -32,7 +31,7 @@ public class UnaryNode extends ASTNode {
     }
 
     public boolean isArray() {
-        return code == RANGE || code == INDEXER || code == SORT || code == ARG_ACCESS;
+        return code == RANGE || code == INDEXER || code == SORT;
     }
 
     public boolean isInteger() {
@@ -40,7 +39,11 @@ public class UnaryNode extends ASTNode {
     }
 
     public boolean isVoid() {
-        return code == PRINT || code == PRINTLN || code == RETURN;
+        return code == PRINT || code == PRINTLN;
+    }
+
+    public boolean isReturnStatement() {
+        return code == RETURN;
     }
 
     public boolean isBool() {

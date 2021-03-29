@@ -6,18 +6,12 @@
  */
 import ast.*;
 import norswap.uranium.Attribute;
-import norswap.uranium.SemanticError;
 import scopes.*;
 
 import norswap.uranium.Reactor;
 import norswap.uranium.Rule;
 import norswap.utils.visitors.ReflectiveFieldWalker;
 import norswap.utils.visitors.Walker;
-
-import java.lang.reflect.Parameter;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
 
 import static norswap.utils.visitors.WalkVisitType.POST_VISIT;
 import static norswap.utils.visitors.WalkVisitType.PRE_VISIT;
@@ -61,6 +55,7 @@ public final class SemanticAnalysis {
         walker.register(IntegerNode.class,              PRE_VISIT,  analysis::integer);
         walker.register(BoolNode.class,                 PRE_VISIT,  analysis::bool);
         walker.register(StringNode.class,               PRE_VISIT,  analysis::string);
+        walker.register(NoneNode.class,                 PRE_VISIT,  analysis::none);
         walker.register(IdentifierNode.class,           PRE_VISIT,  analysis::identifier);
         walker.register(ArrayNode.class,                PRE_VISIT,  analysis::array);
         walker.register(MapNode.class,                  PRE_VISIT,  analysis::map);
@@ -108,6 +103,10 @@ public final class SemanticAnalysis {
         R.set(node, "type", Type.STRING);
     }
 
+    private void none(NoneNode node) {
+        R.set(node, "type", Type.NONE);
+    }
+
     private void identifier(IdentifierNode node) {
         final Scope scope = this.scope;
 
@@ -126,7 +125,31 @@ public final class SemanticAnalysis {
     }
 
     private void array(ArrayNode node) {
-        // TODO
+        if (node.elements != null) {
+            Attribute[] deps = node.elements.stream().map(it -> it.attr("type")).toArray(Attribute[]::new);
+            R.rule(node.attr("type"))
+                    .using(deps)
+                    .by(r -> {
+                        Type superType = Type.UNKNOWN_TYPE;
+                        for (int i = 0; i < deps.length; i++) {
+                            superType = getSuperType(superType, r.get(i));
+                            if (superType == null) {
+                                r.errorFor("All array elements must have the same type", node, node.attr("type"));
+                            }
+                        }
+                        r.set(node, "type", Type.ARRAY);
+                    });
+        } else if (node.size != null) {
+            R.rule(node.attr("type"))
+                    .using(node.size.attr("type"))
+                    .by(r -> {
+                        Type sizeType = r.get(0);
+                        if (!(sizeType == Type.INTEGER || sizeType == Type.UNKNOWN_TYPE)) {
+                            r.errorFor("Array must be initialised with integer size", node, node.attr("type"));
+                        }
+                        r.set(node, "type", Type.ARRAY);
+                    });
+        }
     }
 
     private void map(MapNode node) {
@@ -138,7 +161,120 @@ public final class SemanticAnalysis {
     }
 
     private void unaryExpression(UnaryNode node) {
-        // TODO implement node.isSomething() methods
+        switch (node.code) {
+            case UnaryNode.RANGE:
+                R.rule(node.attr("type"))
+                        .using(node.child.attr("type"))
+                        .by(r -> {
+                           Type argType = r.get(0);
+                           if (!(argType == Type.INTEGER || argType == Type.UNKNOWN_TYPE)) {
+                               r.errorFor("Argument of range function must be an integer", node, node.attr("type"));
+                           }
+                           r.set(node, "type", Type.ARRAY);
+                        });
+                break;
+            case UnaryNode.INDEXER:
+                R.rule(node.attr("type"))
+                        .using(node.child.attr("type"))
+                        .by(r -> {
+                           Type nodeType = r.get(0);
+                           if (nodeType == Type.ARRAY || nodeType == Type.MAP || nodeType == Type.UNKNOWN_TYPE) {
+                               r.set(node, "type", Type.ARRAY);
+                           } else {
+                               r.errorFor("Argument of indexer function must be an array or a map", node, node.attr("type"));
+                           }
+                        });
+                break;
+            case UnaryNode.SORT:
+                R.rule(node.attr("type"))
+                    .using(node.child.attr("type"))
+                    .by(r -> {
+                        Type nodeType = r.get(0);
+                        if (nodeType == Type.ARRAY || nodeType == Type.UNKNOWN_TYPE) {
+                            r.set(node, "type", Type.ARRAY);
+                        } else {
+                            r.errorFor("Argument of sort function must be an array", node, node.attr("type"));
+                        }
+                    });
+                break;
+            case UnaryNode.PARSE_INT:
+                R.rule(node.attr("type"))
+                        .using(node.child.attr("type"))
+                        .by(r -> {
+                            Type childType = r.get(0);
+                            if (childType == Type.STRING || childType == Type.UNKNOWN_TYPE) {
+                                r.set(node, "type", Type.INTEGER);
+                            } else {
+                                r.errorFor("Argument of int function must be a string", node, node.attr("type"));
+                            }
+                        });
+                break;
+            case UnaryNode.PRINT:
+            case UnaryNode.PRINTLN:
+                R.set(node, "type", Type.NONE);
+                break;
+            case UnaryNode.NEGATION:
+                R.rule(node.attr("type"))
+                        .using(node.child.attr("type"))
+                        .by(r -> {
+                            Type childType = r.get(0);
+                            if (childType == Type.INTEGER || childType == Type.UNKNOWN_TYPE) {
+                                r.set(node, "type", Type.INTEGER);
+                            } else {
+                                r.errorFor("Cannot negate a non-int type", node, node.attr("type"));
+                            }
+                        });
+                break;
+            case UnaryNode.NOT:
+                R.rule(node.attr("type"))
+                        .using(node.child.attr("type"))
+                        .by(r -> {
+                            Type childType = r.get(0);
+                            if (childType == Type.BOOLEAN || childType == Type.UNKNOWN_TYPE) {
+                                r.set(node, "type", Type.BOOLEAN);
+                            } else {
+                                r.errorFor("Cannot negate a non-int type", node, node.attr("type"));
+                            }
+                        });
+                break;
+            case UnaryNode.RETURN:
+                FunctionDefinitionNode funDef = currentFunction();
+                R.rule()
+                        .using()
+                        .by(r -> {
+                            if (funDef == null) {
+                                r.error("Cannot return when not in a function", node);
+                            }
+                        });
+
+                break;
+            case UnaryNode.LEN:
+                R.rule(node.attr("type"))
+                        .using(node.child.attr("type"))
+                        .by(r -> {
+                            Type childType = r.get(0);
+                            if (childType == Type.ARRAY || childType == Type.MAP || childType == Type.UNKNOWN_TYPE) {
+                                r.set(node, "type", Type.INTEGER);
+                            } else {
+                                r.errorFor("Argument of len function must be an array or a map", node, node.attr("type"));
+                            }
+                        });
+                break;
+            default:
+                break;
+        }
+
+    }
+
+    private FunctionDefinitionNode currentFunction() {
+        Scope scope = this.scope;
+        while (scope != null) {
+            ASTNode node = scope.node;
+            if (node instanceof FunctionDefinitionNode)
+                return (FunctionDefinitionNode) node;
+            scope = scope.parent;
+        }
+        return null;
     }
 
     private void binaryExpression(BinaryNode node) {
@@ -244,7 +380,7 @@ public final class SemanticAnalysis {
 
     public void parameter(ParameterNode node) {
         scope.declare(node.param.value, node);
-        R.set(node, "type", Type.UNKOWN_TYPE);
+        R.set(node, "type", Type.UNKNOWN_TYPE);
         R.set(node, "scope", scope);
     }
 
@@ -252,7 +388,7 @@ public final class SemanticAnalysis {
         scope.declare(node.name.value, node);
         scope = new Scope(node, scope);
         R.set(node, "scope", scope);
-        R.set(node, "type", Type.UNKOWN_TYPE);
+        R.set(node, "type", Type.UNKNOWN_TYPE);
     }
 
     public void if_(IfNode node) {
@@ -260,7 +396,7 @@ public final class SemanticAnalysis {
                 .using(node.bool, "type")
                 .by(r -> {
                     Type conditionType = r.get(0);
-                    if (!(conditionType == Type.BOOLEAN || conditionType == Type.UNKOWN_TYPE)) {
+                    if (!(conditionType == Type.BOOLEAN || conditionType == Type.UNKNOWN_TYPE)) {
                         r.error("If statement must have a boolean as condition", node);
                     }
                 });
@@ -271,7 +407,7 @@ public final class SemanticAnalysis {
                 .using(node.bool, "type")
                 .by(r -> {
                     Type conditionType = r.get(0);
-                    if (!(conditionType == Type.BOOLEAN || conditionType == Type.UNKOWN_TYPE)) {
+                    if (!(conditionType == Type.BOOLEAN || conditionType == Type.UNKNOWN_TYPE)) {
                         r.error("While statement must have a boolean as condition", node);
                     }
                 });
@@ -285,7 +421,7 @@ public final class SemanticAnalysis {
                 .using(node.list, "type")
                 .by(r -> {
                     Type iterableType = r.get(0);
-                    if (!(iterableType == Type.ARRAY || iterableType == Type.UNKOWN_TYPE)) {
+                    if (!(iterableType == Type.ARRAY || iterableType == Type.UNKNOWN_TYPE)) {
                         r.error("If statement must have a boolean as condition", node);
                     }
                 });
@@ -322,7 +458,16 @@ public final class SemanticAnalysis {
     }
 
     public boolean isAssignableTo(Type right, Type left) {
-        return right == Type.NONE || right == Type.UNKOWN_TYPE || right == left;
+        return right == Type.NONE || right == Type.UNKNOWN_TYPE || right == left;
+    }
+
+    public Type getSuperType(Type a, Type b) {
+        if (a == Type.UNKNOWN_TYPE || a == Type.NONE)
+            return (b == Type.NONE) ? Type.UNKNOWN_TYPE : a;
+        if (b == Type.UNKNOWN_TYPE || b == Type.NONE)
+            return b;
+        if (a == b) return a;
+        return null;
     }
 
 

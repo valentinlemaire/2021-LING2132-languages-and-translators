@@ -4,7 +4,7 @@ import ast.DeclarationNode;
 import ast.VarAssignmentNode;
 
 /**
- * A pair of a {@link Scope} and a {@link BinaryNode} declaring an entry in that scope.
+ * A pair of a {@link Scope} and a {@link DeclarationNode} declaring an entry in that scope.
  */
 public final class DeclarationContext
 {

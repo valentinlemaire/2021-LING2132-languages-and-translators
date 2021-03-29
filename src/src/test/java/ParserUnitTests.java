@@ -193,8 +193,8 @@ public class ParserUnitTests extends AutumnTestFixture {
     @Test
     public void testFunctionDef() {
         this.rule = parser.function_def;
-        successExpect("def fun(a, b): x = 1 return 2 end", new FunctionDefinitionNode(new IdentifierNode("fun"), Arrays.asList(new IdentifierNode("a"), new IdentifierNode("b")), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)), new UnaryNode(new IntegerNode(2), UnaryNode.RETURN)))));
-        successExpect("def fun(a, b): x = 1 end", new FunctionDefinitionNode(new IdentifierNode("fun"), Arrays.asList(new IdentifierNode("a"), new IdentifierNode("b")), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))))));
+        successExpect("def fun(a, b): x = 1 return 2 end", new FunctionDefinitionNode(new IdentifierNode("fun"), Arrays.asList(new ParameterNode(new IdentifierNode("a")), new ParameterNode(new IdentifierNode("b"))), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)), new UnaryNode(new IntegerNode(2), UnaryNode.RETURN)))));
+        successExpect("def fun(a, b): x = 1 end", new FunctionDefinitionNode(new IdentifierNode("fun"), Arrays.asList(new ParameterNode(new IdentifierNode("a")), new ParameterNode(new IdentifierNode("b"))), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))))));
         successExpect("def fun(): end", new FunctionDefinitionNode(new IdentifierNode("fun"), null, new BlockNode(Arrays.asList(new ASTNode[]{}))));
         successExpect("def fun(): return end", new FunctionDefinitionNode(new IdentifierNode("fun"), null, new BlockNode(Arrays.asList(new UnaryNode(null, UnaryNode.RETURN)))));
         failure("def a[1](): end");

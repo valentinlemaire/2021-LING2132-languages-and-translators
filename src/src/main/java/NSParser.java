@@ -258,8 +258,15 @@ public final class NSParser extends Grammar {
     public rule for_ = lazy(() -> seq(FOR, identifier, IN, indexable, COLON, this.statement_sequence, END))
                             .push($ -> new ForNode($.$0(), $.$1(), $.$2()));
 
+
     // Function definition
-    public rule function_def = lazy(() -> seq(DEF, identifier, LPAREN, list.or_push_null(), RPAREN, COLON, this.statement_sequence, END))
+    public rule param = identifier.push($ -> new ParameterNode($.$0()));
+
+    public rule param_list = left_expression()
+                                .operand(param)
+                                .infix(COMMA).push(ActionContext::$list);
+
+    public rule function_def = lazy(() -> seq(DEF, identifier, LPAREN, param_list.or_push_null(), RPAREN, COLON, this.statement_sequence, END))
                         .push($ -> new FunctionDefinitionNode($.$0(), $.$1(), $.$2()));
 
     // SPECIAL FUNCTIONS

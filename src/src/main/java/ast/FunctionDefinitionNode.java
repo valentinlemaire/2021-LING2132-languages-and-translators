@@ -5,10 +5,10 @@ import java.util.Objects;
 
 public class FunctionDefinitionNode extends ASTNode implements DeclarationNode {
     public IdentifierNode name;
-    public List<ASTNode> args;
+    public List<ParameterNode> args;
     public BlockNode block;
 
-    public FunctionDefinitionNode(IdentifierNode name, List<ASTNode> args, BlockNode block) {
+    public FunctionDefinitionNode(IdentifierNode name, List<ParameterNode> args, BlockNode block) {
         this.name = name;
         this.args = args;
         this.block = block;

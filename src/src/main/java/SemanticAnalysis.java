@@ -13,6 +13,7 @@ import norswap.uranium.Rule;
 import norswap.utils.visitors.ReflectiveFieldWalker;
 import norswap.utils.visitors.Walker;
 
+import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -57,6 +58,7 @@ public final class SemanticAnalysis {
 
         // expressions
         walker.register(IntegerNode.class,              PRE_VISIT,  analysis::integer);
+        walker.register(BoolNode.class,                 PRE_VISIT,  analysis::bool);
         walker.register(StringNode.class,               PRE_VISIT,  analysis::string);
         walker.register(IdentifierNode.class,           PRE_VISIT,  analysis::identifier);
         walker.register(ArrayNode.class,                PRE_VISIT,  analysis::array);
@@ -67,6 +69,7 @@ public final class SemanticAnalysis {
         // declarations & scopes
         walker.register(RootNode.class,                 PRE_VISIT,  analysis::root);
         walker.register(BlockNode.class,                PRE_VISIT,  analysis::block);
+        walker.register(ParameterNode.class,            PRE_VISIT,  analysis::parameter);
         walker.register(FunctionDefinitionNode.class,   PRE_VISIT,  analysis::functionDeclaration);
         walker.register(ForNode.class,                  PRE_VISIT,  analysis::for_);
         walker.register(IfNode.class,                   PRE_VISIT,  analysis::if_);
@@ -95,12 +98,31 @@ public final class SemanticAnalysis {
         R.set(node, "type", Type.INTEGER);
     }
 
+    private void bool(BoolNode node) {
+        R.set(node, "type", Type.BOOLEAN);
+    }
+
     private void string(StringNode node) {
         R.set(node, "type", Type.STRING);
     }
 
     private void identifier(IdentifierNode node) {
-        // TODO
+        final Scope scope = this.scope;
+
+        // Try to lookup immediately. This must succeed for variables, but not necessarily for
+        // functions or types. By looking up now, we can report looked up variables later
+        // as being used before being defined.
+        DeclarationContext maybeCtx = scope.lookup(node.value);
+
+        if (maybeCtx != null) {
+            R.set(node, "scope", maybeCtx.scope);
+
+            R.rule(node, "type")
+                    .using(maybeCtx.declaration, "type")
+                    .by(Rule::copyFirst);
+            return;
+        }
+
     }
 
     private void array(ArrayNode node) {
@@ -150,29 +172,17 @@ public final class SemanticAnalysis {
         R.set(node, "scope", scope);
     }
 
+    public void parameter(ParameterNode node) {
+        scope.declare(node.param.value, node);
+        R.set(node, "type", Type.UNKOWN_TYPE);
+        R.set(node, "scope", scope);
+    }
 
     public void functionDeclaration(FunctionDefinitionNode node) {
         scope.declare(node.name.value, node);
         scope = new Scope(node, scope);
         R.set(node, "scope", scope);
         R.set(node, "type", Type.UNKOWN_TYPE);
-
-
-        // declaring function args in scope
-        R.rule()
-                .by(r -> {
-                    if (node.args != null) {
-                        for (ASTNode arg : node.args) {
-                            if (!(arg instanceof IdentifierNode)) {
-                                r.error("Function declared with invalid variable name as argument", node);
-                            } else {
-                                scope.declare(((IdentifierNode) arg).value, node);
-                            }
-                        }
-                    }
-
-                });
-
     }
 
     public void if_(IfNode node) {
@@ -236,13 +246,10 @@ public final class SemanticAnalysis {
 
                     r.set(node, "type", right); // the type of the assignment is the right-side type
 
-                    if (node.left instanceof IdentifierNode
-                            ||  (node.left instanceof BinaryNode && ((BinaryNode) node.left).code == BinaryNode.IDX_ACCESS)) {
+                    if ((node.left instanceof BinaryNode && ((BinaryNode) node.left).code == BinaryNode.IDX_ACCESS)) { // variables can be assigned to a new type but not array elements
                         if (!isAssignableTo(right, left))
                             r.errorFor("Trying to assign a value to a non-compatible lvalue.", node);
                     }
-                    else
-                        r.errorFor("Trying to assign to an non-lvalue expression.", node.left);
                 });
     }
 

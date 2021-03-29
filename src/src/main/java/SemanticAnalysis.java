@@ -13,6 +13,8 @@ import norswap.uranium.Rule;
 import norswap.utils.visitors.ReflectiveFieldWalker;
 import norswap.utils.visitors.Walker;
 
+import java.util.stream.Stream;
+
 import static norswap.utils.visitors.WalkVisitType.POST_VISIT;
 import static norswap.utils.visitors.WalkVisitType.PRE_VISIT;
 
@@ -135,6 +137,7 @@ public final class SemanticAnalysis {
                             superType = getSuperType(superType, r.get(i));
                             if (superType == null) {
                                 r.errorFor("All array elements must have the same type", node, node.attr("type"));
+                                break;
                             }
                         }
                         r.set(node, "type", Type.ARRAY);
@@ -153,7 +156,34 @@ public final class SemanticAnalysis {
     }
 
     private void map(MapNode node) {
-        // TODO
+        if (node.elements != null) {
+            Attribute[] deps  = Stream.concat(
+                    node.elements.stream().map(it -> it.left .attr("type")),
+                    node.elements.stream().map(it -> it.right.attr("type")))
+                .toArray(Attribute[]::new);
+
+            R.rule(node.attr("type"))
+                    .using(deps)
+                    .by(r -> {
+                        Type superType = Type.UNKNOWN_TYPE;
+                        for (int i = 0; i < deps.length/2; i++) {
+                            superType = getSuperType(superType, r.get(i));
+                            if (superType == null) {
+                                r.errorFor("All keys of a map must have the same type", node, node.attr("type"));
+                                break;
+                            }
+                        }
+                        superType = Type.UNKNOWN_TYPE;
+                        for (int i = deps.length/2; i < deps.length; i++) {
+                            superType = getSuperType(superType, r.get(i));
+                            if (superType == null) {
+                                r.errorFor("All values of a map must have the same type", node, node.attr("type"));
+                                break;
+                            }
+                        }
+                        r.set(node, "type", Type.MAP);
+                    });
+        }
     }
 
     private void functionCall(FunctionCallNode node) {

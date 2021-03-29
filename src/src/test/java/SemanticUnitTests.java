@@ -40,6 +40,11 @@ public class SemanticUnitTests extends UraniumTestFixture {
 
     // ---------------------------------------------------------------------------------------------
 
+    @Test public void testRange() {
+        successInput(   "a = range(12)");
+        successInput(   "a = range(len(args))");
+    }
+
     @Test public void testFunctionDefinition() {
         successInput(   "def fun(a, b):\n" +
                         "   c = b\n" +

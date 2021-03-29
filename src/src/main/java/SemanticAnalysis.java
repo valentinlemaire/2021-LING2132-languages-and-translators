@@ -63,6 +63,7 @@ public final class SemanticAnalysis {
         walker.register(StringNode.class,               PRE_VISIT,  analysis::string);
         walker.register(IdentifierNode.class,           PRE_VISIT,  analysis::identifier);
         walker.register(ArrayNode.class,                PRE_VISIT,  analysis::array);
+        walker.register(MapNode.class,                  PRE_VISIT,  analysis::map);
         walker.register(FunctionCallNode.class,         PRE_VISIT,  analysis::functionCall);
         walker.register(UnaryNode.class,                PRE_VISIT,  analysis::unaryExpression);
         walker.register(BinaryNode.class,               PRE_VISIT,  analysis::binaryExpression);
@@ -128,8 +129,12 @@ public final class SemanticAnalysis {
         // TODO
     }
 
-    private void functionCall(FunctionCallNode node) {
+    private void map(MapNode node) {
         // TODO
+    }
+
+    private void functionCall(FunctionCallNode node) {
+        R.set(node, "type", Type.UNKOWN_TYPE);
     }
 
     private void unaryExpression(UnaryNode node) {
@@ -137,8 +142,74 @@ public final class SemanticAnalysis {
     }
 
     private void binaryExpression(BinaryNode node) {
-        /* array access, arithmetic operations, ... */
-        // TODO compare using node.isArithmeticOperation() and other methods
+        if (node.isArithmeticOperation()) {
+            R.rule(node, "type")
+            .using(node.left.attr("type"), node.right.attr("type"))
+            .by(r -> {
+                Type left = r.get(0);
+                Type right = r.get(1);
+
+                if (left == Type.INTEGER && right == Type.INTEGER
+                ||  left == Type.UNKOWN_TYPE || right == Type.UNKOWN_TYPE)
+                    r.set(0, Type.INTEGER);
+                else
+                    r.error("Arithmetic operation needs 2 integers.", node);
+            });
+        }
+        else if (node.isEqualityComparison()) {
+            R.rule(node, "type")
+            .using(node.left.attr("type"), node.right.attr("type"))
+            .by(r -> {
+                Type left = r.get(0);
+                Type right = r.get(1);
+
+                // Comparison will return False if ≠ types are compared, but will not output an error
+                r.set(0, Type.BOOLEAN);
+            });
+        } else if (node.isInequalityComparison()) {
+            R.rule(node, "type")
+            .using(node.left.attr("type"), node.right.attr("type"))
+            .by(r -> {
+                Type left = r.get(0);
+                Type right = r.get(1);
+
+                if (left == Type.INTEGER && right == Type.INTEGER
+                ||  left == Type.STRING && right == Type.STRING
+                ||  left == Type.UNKOWN_TYPE || right == Type.UNKOWN_TYPE)
+                    r.set(0, Type.BOOLEAN);
+                else
+                    r.error("Inequality comparison can only be used with integers and strings", node);
+            });
+        } else if (node.isLogicOperation()) {
+            R.rule(node, "type")
+            .using(node.left.attr("type"), node.right.attr("type"))
+            .by(r -> {
+                Type left = r.get(0);
+                Type right = r.get(1);
+
+                if (left == Type.BOOLEAN && right == Type.BOOLEAN
+                ||  left == Type.UNKOWN_TYPE || right == Type.UNKOWN_TYPE)
+                    r.set(0, Type.BOOLEAN);
+                else
+                    r.error("Inequality comparison can only be used with integers and strings", node);
+             });
+        } else if (node.isIdxAccess()) {
+            R.rule(node, "type")
+            .using(node.left.attr("type"), node.right.attr("type"))
+            .by(r -> {
+                Type left = r.get(0);
+                Type right = r.get(1);
+
+            if (left == Type.ARRAY && right == Type.INTEGER
+            ||  left == Type.MAP
+            ||  left == Type.UNKOWN_TYPE || right == Type.UNKOWN_TYPE)
+                r.set(0, Type.UNKOWN_TYPE);
+            else if (left == Type.ARRAY)
+                r.error("Arrays can only be indexed with integers", node);
+            else
+                r.error("Only Arrays and Map objects can be indexed", node);
+            });
+        }
     }
 
 

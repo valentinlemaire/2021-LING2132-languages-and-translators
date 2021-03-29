@@ -187,7 +187,7 @@ public final class SemanticAnalysis {
     }
 
     private void functionCall(FunctionCallNode node) {
-        R.set(node, "type", Type.UNKOWN_TYPE);
+        R.set(node, "type", Type.UNKNOWN_TYPE);
     }
 
     private void unaryExpression(UnaryNode node) {
@@ -316,7 +316,7 @@ public final class SemanticAnalysis {
                 Type right = r.get(1);
 
                 if (left == Type.INTEGER && right == Type.INTEGER
-                ||  left == Type.UNKOWN_TYPE || right == Type.UNKOWN_TYPE)
+                ||  left == Type.UNKNOWN_TYPE || right == Type.UNKNOWN_TYPE)
                     r.set(0, Type.INTEGER);
                 else
                     r.error("Arithmetic operation needs 2 integers.", node);
@@ -341,7 +341,7 @@ public final class SemanticAnalysis {
 
                 if (left == Type.INTEGER && right == Type.INTEGER
                 ||  left == Type.STRING && right == Type.STRING
-                ||  left == Type.UNKOWN_TYPE || right == Type.UNKOWN_TYPE)
+                ||  left == Type.UNKNOWN_TYPE || right == Type.UNKNOWN_TYPE)
                     r.set(0, Type.BOOLEAN);
                 else
                     r.error("Inequality comparison can only be used with integers and strings", node);
@@ -354,7 +354,7 @@ public final class SemanticAnalysis {
                 Type right = r.get(1);
 
                 if (left == Type.BOOLEAN && right == Type.BOOLEAN
-                ||  left == Type.UNKOWN_TYPE || right == Type.UNKOWN_TYPE)
+                ||  left == Type.UNKNOWN_TYPE || right == Type.UNKNOWN_TYPE)
                     r.set(0, Type.BOOLEAN);
                 else
                     r.error("Inequality comparison can only be used with integers and strings", node);
@@ -368,8 +368,8 @@ public final class SemanticAnalysis {
 
             if (left == Type.ARRAY && right == Type.INTEGER
             ||  left == Type.MAP
-            ||  left == Type.UNKOWN_TYPE || right == Type.UNKOWN_TYPE)
-                r.set(0, Type.UNKOWN_TYPE);
+            ||  left == Type.UNKNOWN_TYPE || right == Type.UNKNOWN_TYPE)
+                r.set(0, Type.UNKNOWN_TYPE);
             else if (left == Type.ARRAY)
                 r.error("Arrays can only be indexed with integers", node);
             else

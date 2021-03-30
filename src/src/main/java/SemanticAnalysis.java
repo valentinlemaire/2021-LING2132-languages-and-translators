@@ -163,7 +163,7 @@ public final class SemanticAnalysis {
                     node.elements.stream().map(it -> it.right.attr("type")))
                 .toArray(Attribute[]::new);
 
-            R.rule(node.attr("type"))
+            R.rule()
                     .using(deps)
                     .by(r -> {
                         Type superType = Type.UNKNOWN_TYPE;
@@ -182,9 +182,9 @@ public final class SemanticAnalysis {
                                 break;
                             }
                         }
-                        r.set(node, "type", Type.MAP);
                     });
         }
+        R.set(node, "type", Type.MAP);
     }
 
     private void functionCall(FunctionCallNode node) {

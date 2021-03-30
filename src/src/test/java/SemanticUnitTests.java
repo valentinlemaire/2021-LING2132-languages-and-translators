@@ -106,7 +106,14 @@ public class SemanticUnitTests extends UraniumTestFixture {
     }
 
     @Test public void testForLoop() {
-        // TODO
+        successInput(   "for i in [1, 3, 2, 7]:\n" +
+                        "   a = 1\n" +
+                        "end");
+        /* TODO args has no type */
+        /*successInput(   "for i in range(len(args)):\n" +
+                        "   a = 1\n" +
+                        "end");*/
+
     }
 
 }

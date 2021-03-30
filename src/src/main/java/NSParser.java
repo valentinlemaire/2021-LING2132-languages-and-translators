@@ -116,7 +116,7 @@ public final class NSParser extends Grammar {
     // Program arguments
     // public rule program_args = lazy(() -> seq(ARGS, LBRACKET, this.expression, RBRACKET).push($ -> new UnaryNode($.$0(), UnaryNode.ARG_ACCESS)));
 
-    public rule any_value = lazy(() -> choice(multiple_indexer_access, function_call, identifier, this.len));
+    public rule any_value = lazy(() -> choice(multiple_indexer_access, function_call, identifier, this.len, this.parse_int));
 
     // NUMERICAL OPERATIONS
 
@@ -154,9 +154,9 @@ public final class NSParser extends Grammar {
     // Value comparison
     public rule comparison = lazy(() -> left_expression()
             .operand(choice(numerical_operation, this.bool_operator))
-            .infix(L,  $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.L))
-            .infix(G,  $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.G))
-            .infix(EQ, $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.EQ))
+            .infix(L,   $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.L))
+            .infix(G,   $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.G))
+            .infix(EQ,  $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.EQ))
             .infix(LEQ, $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.LEQ))
             .infix(GEQ, $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.GEQ))
             .infix(NEQ, $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.NEQ)));
@@ -222,8 +222,12 @@ public final class NSParser extends Grammar {
     // len function
     public rule len = seq(LEN, LPAREN, indexable, RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.LEN));
 
+    // Parsing strings into integers
+    public rule parse_int = seq(INT, LPAREN, choice(string, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.PARSE_INT));
+
+
     // Regrouping expressions
-    public rule expression = choice(string, bool, NONE, indexable, numerical_operation);
+    public rule expression = choice(string, NONE, or_operation, numerical_operation, indexable);
 
     // STATEMENTS
 
@@ -278,13 +282,8 @@ public final class NSParser extends Grammar {
 
     public rule print = choice(print_in_line, print_new_line);
 
-
-    // Parsing strings into integers
-    public rule parse_int = seq(INT, LPAREN, choice(string, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.PARSE_INT));
-
-
     // Regrouping statements
-    public rule statement = choice(function_def, if_, while_, for_, print, return_, parse_int, variable_assignment);
+    public rule statement = choice(function_def, if_, while_, for_, print, return_, variable_assignment);
 
     public rule statement_sequence = choice(statement, line_comment, expression).at_least(0).push($ -> new BlockNode($.$list()));
 

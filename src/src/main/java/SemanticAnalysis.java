@@ -4,6 +4,7 @@
  * [https://github.com/norswap/sigh/blob/master/src/norswap/sigh/SemanticAnalysis.java]
  *
  */
+import Types.Type;
 import ast.*;
 import norswap.uranium.Attribute;
 import scopes.*;
@@ -187,7 +188,16 @@ public final class SemanticAnalysis {
     }
 
     private void functionCall(FunctionCallNode node) {
-        R.set(node, "type", Type.UNKNOWN_TYPE);
+
+        DeclarationContext maybeCtx = scope.lookup(node.functionName.value);
+
+        if (maybeCtx != null) {
+            R.set(node, "scope", maybeCtx.scope);
+
+            R.rule(node, "type")
+                    .using(maybeCtx.declaration, "type")
+                    .by(Rule::copyFirst);
+        }
     }
 
     private void unaryExpression(UnaryNode node) {
@@ -443,6 +453,7 @@ public final class SemanticAnalysis {
     public void for_(ForNode node) {
         scope = new Scope(node, scope);
         R.set(node, "scope", scope);
+        R.set(node, "type", Type.UNKNOWN_TYPE);
 
         R.rule()
                 .using(node.list, "type")

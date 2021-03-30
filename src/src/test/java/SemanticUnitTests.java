@@ -123,15 +123,51 @@ public class SemanticUnitTests extends UraniumTestFixture {
 
     @Test
     public void testForLoop() {
+        failureAt(
+                new RootNode(new BlockNode(Arrays.asList(
+                        new ForNode(
+                                new IdentifierNode("i"),
+                                new IntegerNode(2),
+                                new BlockNode(Arrays.asList(
+                                        new VarAssignmentNode(new IdentifierNode("a"), new IntegerNode(2)))
+                                )
+                        )
+                ))),
+                new ForNode(new IdentifierNode("i"), new IntegerNode(2), new BlockNode(Arrays.asList(
+                        new VarAssignmentNode(new IdentifierNode("a"), new IntegerNode(2)))
+                )));
+
+        failureAt(
+                new RootNode(new BlockNode(Arrays.asList(
+                        new ForNode(
+                                new IdentifierNode("i"),
+                                new MapNode(Arrays.asList(
+                                        new BinaryNode(new IntegerNode(3), new StringNode("hello"), BinaryNode.PAIR)
+                                )),
+                                new BlockNode(Arrays.asList(
+                                        new VarAssignmentNode(new IdentifierNode("a"), new IntegerNode(2)))
+                                )
+                        )
+                ))),
+                new ForNode(
+                        new IdentifierNode("i"),
+                        new MapNode(Arrays.asList(
+                                new BinaryNode(new IntegerNode(3), new StringNode("hello"), BinaryNode.PAIR)
+                        )),
+                        new BlockNode(Arrays.asList(
+                                new VarAssignmentNode(new IdentifierNode("a"), new IntegerNode(2)))
+                        )
+                ));
+
         successInput(   "for i in range(2):\n" +
                         "   a = 1\n" +
                         "end");
-        /* TODO args has no type */
-        /*successInput(   "for i in range(len(args)):\n" +
+        successInput(   "for i in range(len(args)):\n" +
                         "   a = 1\n" +
-                        "end");*/
-
+                        "end");
     }
+
+
 
 
 }

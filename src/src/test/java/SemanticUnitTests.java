@@ -101,9 +101,9 @@ public class SemanticUnitTests extends UraniumTestFixture {
     @Test
     public void testMap() {
         successInput("a = {1 : \"a\", 2 : \"b\", 3 : \"c\"}");
-        successInput(   "x = 1\n"     +
-                        "y = \"b\"\n" +
-                        "myMap = {x : \"a\", 2 : y    , 3 : \"c\"}");
+        successInput("x = 1\n"     +
+                     "y = \"b\"\n" +
+                     "myMap = {x : \"a\", 2 : y    , 3 : \"c\"}");
         failureAt(
                 new RootNode(new BlockNode(Arrays.asList(
                         new MapNode(Arrays.asList(
@@ -119,12 +119,167 @@ public class SemanticUnitTests extends UraniumTestFixture {
 
     @Test
     public void testFunctionCall() {
-        /* TODO figure out why this works... */
-        failureInput("testFunction(\"Hello World\", 3)");
-        successInput(   "def testFunction(arg1, arg2) :\n" +
-                        "   return 3\n" +
-                        "end\n" +
-                        "testFunction(\"Hello World\", 3)");
+        /* TODO shoud fail ? failureInput("testFunction(\"Hello World\", 3)");*/
+        successInput("def testFunction(arg1, arg2) :\n" +
+                     "   a = 3 + 4\n" +
+                     "end\n" +
+                     "testFunction(\"Hello World\", 3)");
+    }
+
+    @Test
+    public void testUnaryNode() {
+        // range
+        successInput("a = range(3)");
+        failureInput("a = range(b)");
+        successInput("b = 4\n" +
+                     "a = range(b)");
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                        new UnaryNode(new StringNode("Hello"), UnaryNode.RANGE)
+                ))),
+                new UnaryNode(new StringNode("Hello"), UnaryNode.RANGE)
+        );
+        success(new RootNode(new BlockNode(Arrays.asList(
+                        new UnaryNode(new IntegerNode(3), UnaryNode.RANGE)
+                )))
+        );
+
+        // indexer
+        // TODO
+
+        // sort
+        successInput("a = sort([3, 2, 5, 4])");
+        successInput("a = sort([\"PO\", \"TA\", \"TOES\"])");
+        successInput("b = [1, 3, 2, 7]\n" +
+                     "a = sort(b)");
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                        new UnaryNode(new StringNode("Hello"), UnaryNode.SORT)
+                ))),
+                new UnaryNode(new StringNode("Hello"), UnaryNode.SORT)
+        );
+        success(new RootNode(new BlockNode(Arrays.asList(
+                        new UnaryNode(new ArrayNode(Arrays.asList(
+                                new IntegerNode(4),
+                                new IntegerNode(2),
+                                new IntegerNode(7),
+                                new IntegerNode(1)
+                        )), UnaryNode.SORT)
+        ))));
+
+        // parseInt
+        successInput("a = int(\"3\")");
+        successInput("b = \"hello\"\n" +
+                     "a = int(b)");
+        failureAt(
+                new RootNode(new BlockNode(Arrays.asList(
+                        new UnaryNode(new IntegerNode(3), UnaryNode.PARSE_INT)
+                ))),
+                new UnaryNode(new IntegerNode(3), UnaryNode.PARSE_INT)
+        );
+        success(new RootNode(new BlockNode(Arrays.asList(
+                        new UnaryNode(new StringNode("Hello World"), UnaryNode.PARSE_INT)
+        ))));
+
+        // print
+        successInput("print(\"3\")");
+        successInput("print(3)");
+        successInput("print(True)");
+        successInput("b = \"hello\"\n" +
+                     "print(b)");
+        /* TODO should fail ? failureInput("print(a)");*/
+
+        // println
+        successInput("println(\"3\")");
+        successInput("println(3)");
+        successInput("println(True)");
+        successInput("b = \"hello\"\n" +
+                     "println(b)");
+
+        // negation
+        successInput("a = -2");
+        successInput("a = -4");
+        successInput("a = -int(\"3\")");
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                new UnaryNode(new StringNode("Hello"), UnaryNode.NEGATION)
+                ))),
+                new UnaryNode(new StringNode("Hello"), UnaryNode.NEGATION)
+        );
+        success(new RootNode(new BlockNode(Arrays.asList(
+                        new UnaryNode(
+                                new UnaryNode(new StringNode("Hello World"), UnaryNode.PARSE_INT),
+                                UnaryNode.NEGATION)
+        ))));
+
+        // not
+        successInput("not True");
+        successInput("not False");
+        successInput("b = True\n" +
+                     "not b");
+        success(new RootNode(new BlockNode(Arrays.asList(
+                new UnaryNode(new BoolNode(true), UnaryNode.NOT)
+        ))));
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                new UnaryNode(new StringNode("Hello"), UnaryNode.NOT)))),
+                new UnaryNode(new StringNode("Hello"), UnaryNode.NOT)
+        );
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                new UnaryNode(new IntegerNode(7), UnaryNode.NOT)))),
+                new UnaryNode(new IntegerNode(7), UnaryNode.NOT)
+        );
+
+        // return
+        successInput("def testFunction(arg1, arg2) :\n" +
+                     "   return 3\n" +
+                     "end\n" +
+                     "testFunction(\"Hello World\", 3)");
+        failureInput("return 3");
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                new UnaryNode(new StringNode("Hello"), UnaryNode.RETURN)))),
+                new UnaryNode(new StringNode("Hello"), UnaryNode.RETURN)
+        );
+        success(new RootNode(new BlockNode(Arrays.asList(
+                new FunctionDefinitionNode(
+                        new IdentifierNode("myFunction"),
+                        Arrays.asList(
+                                new ParameterNode(new IdentifierNode("arg1")),
+                                new ParameterNode(new IdentifierNode("arg2"))
+                        ),
+                        new BlockNode(Arrays.asList(
+                                new VarAssignmentNode(new IdentifierNode("var"), new IntegerNode(4)),
+                                new UnaryNode(new IdentifierNode("var"), UnaryNode.RETURN)
+                        )))
+        ))));
+
+        // len
+        successInput("a = len([1, 2, 3])");
+        successInput("a = len([:4])");
+        successInput("a = [:4]\n" +
+                     "len(a)");
+        /* TODO should this not fail ?*/
+        /*failureInput("a = True\n" +
+                     "len(a)");*/
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                new UnaryNode(new StringNode("Hello World"), UnaryNode.LEN)))),
+                new UnaryNode(new StringNode("Hello World"), UnaryNode.LEN)
+        );
+        success(new RootNode(new BlockNode(Arrays.asList(
+                new UnaryNode(new ArrayNode(Arrays.asList(
+                        new IntegerNode(4),
+                        new IntegerNode(3),
+                        new IntegerNode(7)
+                )), UnaryNode.LEN)
+        ))));
+        /* TODO this works because VarAssignment returns NoneType/UnknownType I think... should it work ? */
+        /*success(new RootNode(new BlockNode(Arrays.asList(
+                new UnaryNode(new ArrayNode(Arrays.asList(
+                        new VarAssignmentNode(new IdentifierNode("var"), new IntegerNode(4)),
+                        new UnaryNode(new StringNode("4"), UnaryNode.PARSE_INT)
+                )), UnaryNode.LEN)
+        ))));*/
+    }
+
+    @Test
+    public void testBinaryNode() {
+        // TODO
     }
 
     @Test
@@ -250,7 +405,5 @@ public class SemanticUnitTests extends UraniumTestFixture {
                         "   a = 1\n" +
                         "end");
     }
-
-
 
 }

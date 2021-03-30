@@ -207,10 +207,11 @@ public final class SemanticAnalysis {
                         .using(node.child.attr("type"))
                         .by(r -> {
                            Type argType = r.get(0);
-                           if (!(argType == Type.INTEGER || argType == Type.UNKNOWN_TYPE)) {
+                           if (argType == Type.INTEGER || argType == Type.UNKNOWN_TYPE) {
+                               r.set(node, "type", Type.ARRAY);
+                           } else {
                                r.errorFor("Argument of range function must be an integer", node, node.attr("type"));
                            }
-                           r.set(node, "type", Type.ARRAY);
                         });
                 break;
             case UnaryNode.INDEXER:

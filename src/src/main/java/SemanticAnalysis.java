@@ -324,11 +324,8 @@ public final class SemanticAnalysis {
         }
         else if (node.isEqualityComparison()) {
             R.rule(node, "type")
-            .using(node.left.attr("type"), node.right.attr("type"))
+            .using()
             .by(r -> {
-                Type left = r.get(0);
-                Type right = r.get(1);
-
                 // Comparison will return False if ≠ types are compared, but will not output an error
                 r.set(0, Type.BOOLEAN);
             });
@@ -452,7 +449,7 @@ public final class SemanticAnalysis {
                 .by(r -> {
                     Type iterableType = r.get(0);
                     if (!(iterableType == Type.ARRAY || iterableType == Type.UNKNOWN_TYPE)) {
-                        r.error("If statement must have a boolean as condition", node);
+                        r.error("For statement must have an array to iterate over", node);
                     }
                 });
 

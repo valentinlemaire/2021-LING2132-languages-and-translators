@@ -29,13 +29,19 @@ public class FileTests {
                 System.out.println(result.toString(lineMap, false));
 
                 if (!result.fullMatch)
-                    return;
+                    continue;
 
                 ASTNode tree = (ASTNode) result.topValue();
                 Reactor reactor = new Reactor();
                 Walker<ASTNode> walker = SemanticAnalysis.createWalker(reactor);
                 walker.walk(tree);
                 reactor.run();
+
+                if (!reactor.errors().isEmpty()) {
+                    System.out.println(reactor.reportErrors(it ->
+                            it.toString()));
+                    return;
+                }
 
             } catch (IOException e) {
                 System.err.println("Error reading file.");

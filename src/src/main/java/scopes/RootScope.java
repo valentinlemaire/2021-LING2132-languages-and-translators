@@ -3,6 +3,9 @@ package scopes;
 import ast.RootNode;
 import norswap.uranium.Reactor;
 
+import Types.Type;
+
+
 import static scopes.DeclarationKind.*;
 
 /**
@@ -38,6 +41,16 @@ public final class RootScope extends Scope
     public RootScope (RootNode node, Reactor reactor) {
         super(node, null);
 
+        reactor.set(_true,      "type",         Type.BOOLEAN);
+        reactor.set(_false,     "type",         Type.BOOLEAN);
+        reactor.set(_none,      "type",         Type.NONE);
+
+        reactor.set(_args,      "type",         Type.ARRAY);
+        reactor.set(print,      "type",         Type.NONE);
+        reactor.set(println,    "type",         Type.NONE);
+        reactor.set(sort,       "type",         Type.ARRAY);
+        reactor.set(range,      "type",         Type.ARRAY);
+        reactor.set(indexer,    "type",         Type.ARRAY);
     }
 
     // ---------------------------------------------------------------------------------------------

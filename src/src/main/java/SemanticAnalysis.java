@@ -137,7 +137,7 @@ public final class SemanticAnalysis {
                             superType = getSuperType(superType, r.get(i));
                             if (superType == null) {
                                 r.errorFor("All array elements must have the same type", node, node.attr("type"));
-                                break;
+                                return;
                             }
                         }
                         r.set(node, "type", Type.ARRAY);
@@ -149,6 +149,7 @@ public final class SemanticAnalysis {
                         Type sizeType = r.get(0);
                         if (!(sizeType == Type.INTEGER || sizeType == Type.UNKNOWN_TYPE)) {
                             r.errorFor("Array must be initialised with integer size", node, node.attr("type"));
+                            return;
                         }
                         r.set(node, "type", Type.ARRAY);
                     });
@@ -162,7 +163,7 @@ public final class SemanticAnalysis {
                     node.elements.stream().map(it -> it.right.attr("type")))
                 .toArray(Attribute[]::new);
 
-            R.rule()
+            R.rule(node.attr("type"))
                     .using(deps)
                     .by(r -> {
                         Type superType = Type.UNKNOWN_TYPE;
@@ -170,7 +171,7 @@ public final class SemanticAnalysis {
                             superType = getSuperType(superType, r.get(i));
                             if (superType == null) {
                                 r.errorFor("All keys of a map must have the same type", node, node.attr("type"));
-                                break;
+                                return;
                             }
                         }
                         superType = Type.UNKNOWN_TYPE;
@@ -178,12 +179,12 @@ public final class SemanticAnalysis {
                             superType = getSuperType(superType, r.get(i));
                             if (superType == null) {
                                 r.errorFor("All values of a map must have the same type", node, node.attr("type"));
-                                break;
+                                return;
                             }
                         }
+                        r.set(node, "type", Type.MAP);
                     });
         }
-        R.set(node, "type", Type.MAP);
     }
 
     private void functionCall(FunctionCallNode node) {
@@ -500,9 +501,9 @@ public final class SemanticAnalysis {
 
     public Type getSuperType(Type a, Type b) {
         if (a == Type.UNKNOWN_TYPE || a == Type.NONE)
-            return (b == Type.NONE) ? Type.UNKNOWN_TYPE : a;
+            return (b == Type.NONE) ? Type.UNKNOWN_TYPE : b;
         if (b == Type.UNKNOWN_TYPE || b == Type.NONE)
-            return b;
+            return a;
         if (a == b) return a;
         return null;
     }

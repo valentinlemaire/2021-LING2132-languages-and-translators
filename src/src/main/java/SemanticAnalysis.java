@@ -79,7 +79,6 @@ public final class SemanticAnalysis {
         walker.register(FunctionDefinitionNode.class,   POST_VISIT, analysis::popScope);
         walker.register(ForNode.class,                  POST_VISIT, analysis::popScope);
 
-
         // statements
         walker.register(VarAssignmentNode.class,        PRE_VISIT,  analysis::varAssignment);
 
@@ -445,10 +444,10 @@ public final class SemanticAnalysis {
         R.set(node, "scope", scope);
 
         R.rule()
-                .using(node.list, "type")
+                .using(node.list.attr("type"))
                 .by(r -> {
                     Type iterableType = r.get(0);
-                    if (!(iterableType == Type.ARRAY || iterableType == Type.UNKNOWN_TYPE)) {
+                    if (iterableType != Type.ARRAY && iterableType != Type.UNKNOWN_TYPE) {
                         r.error("For statement must have an array to iterate over", node);
                     }
                 });

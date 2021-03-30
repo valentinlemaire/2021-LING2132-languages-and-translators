@@ -22,30 +22,35 @@ public class SemanticUnitTests extends UraniumTestFixture {
 
     private String input;
 
-    @Override protected Object parse (String input) {
+    @Override
+    protected Object parse (String input) {
         this.input = input;
         return autumnFixture.success(input).topValue();
     }
 
-    @Override protected String astNodeToString (Object ast) {
+    @Override
+    protected String astNodeToString (Object ast) {
         return ast.toString();
     }
 
     // ---------------------------------------------------------------------------------------------
 
-    @Override protected void configureSemanticAnalysis (Reactor reactor, Object ast) {
+    @Override
+    protected void configureSemanticAnalysis (Reactor reactor, Object ast) {
         Walker<ASTNode> walker = SemanticAnalysis.createWalker(reactor);
         walker.walk(((ASTNode) ast));
     }
 
     // ---------------------------------------------------------------------------------------------
 
-    @Test public void testRange() {
+    @Test
+    public void testRange() {
         successInput(   "a = range(12)");
         successInput(   "a = range(len(args))");
     }
 
-    @Test public void testFunctionDefinition() {
+    @Test
+    public void testFunctionDefinition() {
         successInput(   "def fun(a, b):\n" +
                         "   c = b\n" +
                         "end");
@@ -72,7 +77,17 @@ public class SemanticUnitTests extends UraniumTestFixture {
                         "end");
     }
 
-    @Test public void testIfCondition() {
+    @Test
+    public void testReturn() {
+        successInput(   "d = 1\n" +
+                        "def fun(a, b):\n" +
+                        "   c = d\n" +
+                        "   return c\n" +
+                        "end");
+    }
+
+    @Test
+    public void testIfCondition() {
         failureAt(  new RootNode(new BlockNode(Arrays.asList(
                         new IfNode(new IntegerNode(2), new BlockNode(Arrays.asList(
                                 new VarAssignmentNode(new IdentifierNode("a"), new IntegerNode(2)))), null)))),
@@ -87,7 +102,8 @@ public class SemanticUnitTests extends UraniumTestFixture {
                         "end");
     }
 
-    @Test public void testWhileLoop() {
+    @Test
+    public void testWhileLoop() {
         failureAt(  new RootNode(new BlockNode(Arrays.asList(
                 new WhileNode(new IntegerNode(2), new BlockNode(Arrays.asList(
                         new VarAssignmentNode(new IdentifierNode("a"), new IntegerNode(2)))))))),
@@ -105,8 +121,9 @@ public class SemanticUnitTests extends UraniumTestFixture {
                         "end");
     }
 
-    @Test public void testForLoop() {
-        successInput(   "for i in [1, 3, 2, 7]:\n" +
+    @Test
+    public void testForLoop() {
+        successInput(   "for i in range(2):\n" +
                         "   a = 1\n" +
                         "end");
         /* TODO args has no type */
@@ -115,5 +132,6 @@ public class SemanticUnitTests extends UraniumTestFixture {
                         "end");*/
 
     }
+
 
 }

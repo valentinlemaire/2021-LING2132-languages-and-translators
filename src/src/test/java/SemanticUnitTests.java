@@ -152,6 +152,8 @@ public class SemanticUnitTests extends UraniumTestFixture {
     @Test
     public void testIndexer() {
         //TODO
+        // TODO should return [0, 1, 2, 3] if indexer(array) and [key1, key2, key3] if indexer(map)
+
     }
 
     @Test
@@ -416,4 +418,8 @@ public class SemanticUnitTests extends UraniumTestFixture {
                         "end");
     }
 
+    @Test
+    public void testVarAssignment() {
+        // TODO
+    }
 }

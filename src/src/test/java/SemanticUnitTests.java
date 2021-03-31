@@ -282,12 +282,12 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput("a = len([1, 2, 3])");
         successInput("a = len([:4])");
         successInput(   "a = [:4]\n" +
-                        "len(a)");
+                "len(a)");
 
         /* TODO should this not fail ?*/
 
         failureInput("a = False\n" +
-                     "b = len(a)");
+                "b = len(a)");
 
         failureAt(new RootNode(new BlockNode(Arrays.asList(
                 new UnaryNode(new StringNode("Hello World"), UnaryNode.LEN)))),
@@ -302,12 +302,75 @@ public class SemanticUnitTests extends UraniumTestFixture {
         ))));
     }
 
-
     @Test
-    public void testBinaryNode() {
-        // TODO
+    public void testArithmeticOperation() {
+        successInput("1 + 2");
+        successInput("1 - 2");
+        successInput("1 * 2");
+        successInput("1 / 2");
+        successInput("1 % 2");
+        successInput("a = 3\n" +
+                     "a + 2");
+        /* TODO both tests should fail
+            (1st because a is not initialised and 2nd because type(a) is a string and b is an int)
+            wtf ? */
+        /*failureInput("a + 2");*/
+        /*failureInput("a = \"3\"\n" +
+                     "a + 2");*/
+        /* TODO should this fail ? */
+        /*failureAt(new RootNode(new BlockNode(Arrays.asList(
+                new VarAssignmentNode(new IdentifierNode("a"), new StringNode("3")),
+                new BinaryNode(new IdentifierNode("a"), new IntegerNode(2), BinaryNode.ADD)))),
+                new BinaryNode(new IdentifierNode("a"), new IntegerNode(2), BinaryNode.ADD)
+        );*/
     }
 
+    @Test
+    public void testEqualityComparison() {
+        successInput("1 == 2");
+        successInput("1 != 2");
+        /* TODO Parse Error on the next ones... weird */
+        /*successInput("\"1\" == \"2\"");*/
+        /*successInput("[1] == [1, 2]");*/
+        successInput("a = 1\n" +
+                     "a == 2");
+        /* TODO Seems like equality doesn't work with strings (parser "problem") */
+        /*successInput("a = \"Hello World\"\n" +
+                     "a == \"PO-TA-TOES\"");*/
+    }
+
+    @Test
+    public void testInequalityComparison() {
+        successInput("1 < 2");
+        successInput("1 <= 2");
+        successInput("1 > 2");
+        successInput("1 >= 2");
+        successInput("1 < 2");
+        /* TODO Again, we did not implement equality and inequality between strings in the parser */
+        /*successInput("\"Hello\" < \"Hello\"");*/
+    }
+
+    @Test
+    public void testLogicOperation() {
+        successInput("True and False");
+        successInput("a = True\n" +
+                     "a or True");
+        /* TODO other tests but will fail if we test the same things (a = "str", True or a will not fail but should)*/
+    }
+
+    @Test
+    public void testIndexAccess() {
+        successInput("a = [1, 2, 3]\n" +
+                     "a[1]");
+        successInput("[:3][2]");
+        /* TODO this does not fail ???? */
+        /*failureInput("\"Hello\"[2]");*/
+        /*failureInput("a = [1, 2, 3]\n" +
+                     "a[\"hello\"]");*/
+        /* TODO Again, check type of a variable ? */
+        /*failureInput("a = True\n" +
+                     "a[1]");*/
+    }
 
     @Test
     public void testFunctionDefinition() {

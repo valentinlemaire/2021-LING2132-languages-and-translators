@@ -144,7 +144,7 @@ public class SemanticUnitTests extends UraniumTestFixture {
         );
 
         // indexer
-        // TODO
+        // TODO should return [0, 1, 2, 3] if indexer(array) and [key1, key2, key3] if indexer(map)
 
         // sort
         successInput("a = sort([3, 2, 5, 4])");
@@ -268,13 +268,6 @@ public class SemanticUnitTests extends UraniumTestFixture {
                         new IntegerNode(7)
                 )), UnaryNode.LEN)
         ))));
-        /* TODO this works because VarAssignment returns NoneType/UnknownType I think... should it work ? */
-        /*success(new RootNode(new BlockNode(Arrays.asList(
-                new UnaryNode(new ArrayNode(Arrays.asList(
-                        new VarAssignmentNode(new IdentifierNode("var"), new IntegerNode(4)),
-                        new UnaryNode(new StringNode("4"), UnaryNode.PARSE_INT)
-                )), UnaryNode.LEN)
-        ))));*/
     }
 
     @Test
@@ -406,4 +399,8 @@ public class SemanticUnitTests extends UraniumTestFixture {
                         "end");
     }
 
+    @Test
+    public void testVarAssignment() {
+        // TODO
+    }
 }

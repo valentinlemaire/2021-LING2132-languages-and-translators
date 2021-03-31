@@ -401,14 +401,14 @@ public final class SemanticAnalysis {
                 Type left = r.get(0);
                 Type right = r.get(1);
 
-            if (left == Type.ARRAY && right == Type.INTEGER
-            ||  left == Type.MAP
-            ||  left == Type.UNKNOWN_TYPE || right == Type.UNKNOWN_TYPE)
-                r.set(0, Type.UNKNOWN_TYPE);
-            else if (left == Type.ARRAY)
-                r.error("Arrays can only be indexed with integers", node);
-            else
-                r.error("Only Arrays and Map objects can be indexed", node);
+                if (left == Type.ARRAY && right == Type.INTEGER
+                ||  left == Type.MAP
+                ||  left == Type.UNKNOWN_TYPE || right == Type.UNKNOWN_TYPE)
+                    r.set(0, Type.UNKNOWN_TYPE);
+                else if (left == Type.ARRAY)
+                    r.error("Arrays can only be indexed with integers", node);
+                else
+                    r.error("Only Arrays and Map objects can be indexed", node);
             });
         }
     }

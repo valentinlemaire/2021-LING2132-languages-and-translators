@@ -116,7 +116,7 @@ public final class NSParser extends Grammar {
     // Program arguments
     // public rule program_args = lazy(() -> seq(ARGS, LBRACKET, this.expression, RBRACKET).push($ -> new UnaryNode($.$0(), UnaryNode.ARG_ACCESS)));
 
-    public rule any_value = lazy(() -> choice(multiple_indexer_access, function_call, identifier, this.len, this.parse_int));
+    public rule any_value = lazy(() -> choice(multiple_indexer_access, function_call, this.len, this.parse_int, identifier));
 
     // NUMERICAL OPERATIONS
 

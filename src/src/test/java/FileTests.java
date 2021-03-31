@@ -38,8 +38,7 @@ public class FileTests {
                 reactor.run();
 
                 if (!reactor.errors().isEmpty()) {
-                    System.out.println(reactor.reportErrors(it ->
-                            it.toString()));
+                    System.out.println(reactor.reportErrors(Object::toString));
                     return;
                 }
 

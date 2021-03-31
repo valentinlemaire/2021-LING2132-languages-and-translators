@@ -14,8 +14,10 @@ import norswap.uranium.Rule;
 import norswap.utils.visitors.ReflectiveFieldWalker;
 import norswap.utils.visitors.Walker;
 
+import java.util.List;
 import java.util.stream.Stream;
 
+import static norswap.utils.Vanilla.forEachIndexed;
 import static norswap.utils.visitors.WalkVisitType.POST_VISIT;
 import static norswap.utils.visitors.WalkVisitType.PRE_VISIT;
 
@@ -123,7 +125,22 @@ public final class SemanticAnalysis {
             R.rule(node, "type")
                     .using(maybeCtx.declaration, "type")
                     .by(Rule::copyFirst);
+            return;
         }
+
+        R.rule()
+                .by(r -> {
+                    DeclarationContext ctx = scope.lookup(node.value);
+
+                    if (ctx == null) {
+                        r.errorFor("Could not resolve: " + node.value,
+                                node, node.attr("scope"), node.attr("type"));
+                    } else {
+                        r.errorFor("Variable or function used before declaration: " + node.value,
+                                    node, node.attr("type"));
+
+                    }
+                });
     }
 
     private void array(ArrayNode node) {
@@ -189,15 +206,25 @@ public final class SemanticAnalysis {
 
     private void functionCall(FunctionCallNode node) {
 
-        DeclarationContext maybeCtx = scope.lookup(node.functionName.value);
+        this.inferenceContext = node;
 
-        if (maybeCtx != null) {
-            R.set(node, "scope", maybeCtx.scope);
+        final Scope scope = this.scope;
 
-            R.rule(node, "type")
-                    .using(maybeCtx.declaration, "type")
-                    .by(Rule::copyFirst);
-        }
+
+        R.rule(node, "type")
+                .using(node.functionName.attr("type"))
+                .by(r -> {
+                    r.set(0, Type.UNKNOWN_TYPE);
+
+                    DeclarationContext maybeCtx = scope.lookup(node.functionName.value);
+
+                    List<ParameterNode> params = ((FunctionDefinitionNode) maybeCtx.declaration).args;
+                    List<ASTNode> args = node.args;
+
+                    if (params.size() != args.size())
+                        r.errorFor("Wrong number of arguments, expected "+params.size()+" but got "+args.size(),
+                                node);
+                });
     }
 
     private void unaryExpression(UnaryNode node) {

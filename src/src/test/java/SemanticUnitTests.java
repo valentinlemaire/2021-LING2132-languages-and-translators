@@ -68,9 +68,14 @@ public class SemanticUnitTests extends UraniumTestFixture {
 
     @Test
     public void testIdentifier() {
-        successInput("a");
-        successInput("identifier");
-        successInput("Second_Identifier");
+        successInput(   "a = 1\n" +
+                        "a");
+        successInput(   "identifier = None\n" +
+                        "identifier = \"this\"");
+
+        failureAt(  new RootNode(new BlockNode(Arrays.asList(
+                        new IdentifierNode("a")
+                    ))), new IdentifierNode("a"));
     }
 
     @Test
@@ -119,56 +124,65 @@ public class SemanticUnitTests extends UraniumTestFixture {
 
     @Test
     public void testFunctionCall() {
-        /* TODO shoud fail ? failureInput("testFunction(\"Hello World\", 3)");*/
+        failureInput("testFunction(\"Hello World\", 3)");
         successInput("def testFunction(arg1, arg2) :\n" +
                      "   a = 3 + 4\n" +
                      "end\n" +
                      "testFunction(\"Hello World\", 3)");
     }
 
+
     @Test
-    public void testUnaryNode() {
-        // range
+    public void testRange() {
         successInput("a = range(3)");
         failureInput("a = range(b)");
         successInput("b = 4\n" +
-                     "a = range(b)");
+                "a = range(b)");
         failureAt(new RootNode(new BlockNode(Arrays.asList(
-                        new UnaryNode(new StringNode("Hello"), UnaryNode.RANGE)
+                new UnaryNode(new StringNode("Hello"), UnaryNode.RANGE)
                 ))),
                 new UnaryNode(new StringNode("Hello"), UnaryNode.RANGE)
         );
         success(new RootNode(new BlockNode(Arrays.asList(
-                        new UnaryNode(new IntegerNode(3), UnaryNode.RANGE)
+                new UnaryNode(new IntegerNode(3), UnaryNode.RANGE)
                 )))
         );
+    }
 
-        // indexer
-        // TODO
+    @Test
+    public void testIndexer() {
+        //TODO
+    }
 
-        // sort
+    @Test
+    public void testSort() {
         successInput("a = sort([3, 2, 5, 4])");
         successInput("a = sort([\"PO\", \"TA\", \"TOES\"])");
         successInput("b = [1, 3, 2, 7]\n" +
-                     "a = sort(b)");
+                "a = sort(b)");
+
+        failureInput(   "b = False\n" +
+                        "a = sort(b)");
         failureAt(new RootNode(new BlockNode(Arrays.asList(
-                        new UnaryNode(new StringNode("Hello"), UnaryNode.SORT)
+                new UnaryNode(new StringNode("Hello"), UnaryNode.SORT)
                 ))),
                 new UnaryNode(new StringNode("Hello"), UnaryNode.SORT)
         );
         success(new RootNode(new BlockNode(Arrays.asList(
-                        new UnaryNode(new ArrayNode(Arrays.asList(
-                                new IntegerNode(4),
-                                new IntegerNode(2),
-                                new IntegerNode(7),
-                                new IntegerNode(1)
-                        )), UnaryNode.SORT)
+                new UnaryNode(new ArrayNode(Arrays.asList(
+                        new IntegerNode(4),
+                        new IntegerNode(2),
+                        new IntegerNode(7),
+                        new IntegerNode(1)
+                )), UnaryNode.SORT)
         ))));
+    }
 
-        // parseInt
+    @Test
+    public void testParseInt() {
         successInput("a = int(\"3\")");
         successInput("b = \"hello\"\n" +
-                     "a = int(b)");
+                "a = int(b)");
         failureAt(
                 new RootNode(new BlockNode(Arrays.asList(
                         new UnaryNode(new IntegerNode(3), UnaryNode.PARSE_INT)
@@ -176,25 +190,31 @@ public class SemanticUnitTests extends UraniumTestFixture {
                 new UnaryNode(new IntegerNode(3), UnaryNode.PARSE_INT)
         );
         success(new RootNode(new BlockNode(Arrays.asList(
-                        new UnaryNode(new StringNode("Hello World"), UnaryNode.PARSE_INT)
+                new UnaryNode(new StringNode("Hello World"), UnaryNode.PARSE_INT)
         ))));
+    }
 
-        // print
+    @Test
+    public void testPrint() {
         successInput("print(\"3\")");
         successInput("print(3)");
         successInput("print(True)");
         successInput("b = \"hello\"\n" +
-                     "print(b)");
-        /* TODO should fail ? failureInput("print(a)");*/
+                "print(b)");
+        failureInput("print(a)");
+    }
 
-        // println
+    @Test
+    public void testPrintln() {
         successInput("println(\"3\")");
         successInput("println(3)");
         successInput("println(True)");
         successInput("b = \"hello\"\n" +
-                     "println(b)");
+                "println(b)");
+    }
 
-        // negation
+    @Test
+    public void testNegation() {
         successInput("a = -2");
         successInput("a = -4");
         successInput("a = -int(\"3\")");
@@ -204,16 +224,19 @@ public class SemanticUnitTests extends UraniumTestFixture {
                 new UnaryNode(new StringNode("Hello"), UnaryNode.NEGATION)
         );
         success(new RootNode(new BlockNode(Arrays.asList(
-                        new UnaryNode(
-                                new UnaryNode(new StringNode("Hello World"), UnaryNode.PARSE_INT),
-                                UnaryNode.NEGATION)
+                new UnaryNode(
+                        new UnaryNode(new StringNode("Hello World"), UnaryNode.PARSE_INT),
+                        UnaryNode.NEGATION)
         ))));
+    }
 
-        // not
+
+    @Test
+    public void testNot() {
         successInput("not True");
         successInput("not False");
         successInput("b = True\n" +
-                     "not b");
+                "not b");
         success(new RootNode(new BlockNode(Arrays.asList(
                 new UnaryNode(new BoolNode(true), UnaryNode.NOT)
         ))));
@@ -225,12 +248,14 @@ public class SemanticUnitTests extends UraniumTestFixture {
                 new UnaryNode(new IntegerNode(7), UnaryNode.NOT)))),
                 new UnaryNode(new IntegerNode(7), UnaryNode.NOT)
         );
+    }
 
-        // return
+    @Test
+    public void testReturn() {
         successInput("def testFunction(arg1, arg2) :\n" +
-                     "   return 3\n" +
-                     "end\n" +
-                     "testFunction(\"Hello World\", 3)");
+                "   return 3\n" +
+                "end\n" +
+                "testFunction(\"Hello World\", 3)");
         failureInput("return 3");
         failureAt(new RootNode(new BlockNode(Arrays.asList(
                 new UnaryNode(new StringNode("Hello"), UnaryNode.RETURN)))),
@@ -248,15 +273,20 @@ public class SemanticUnitTests extends UraniumTestFixture {
                                 new UnaryNode(new IdentifierNode("var"), UnaryNode.RETURN)
                         )))
         ))));
+    }
 
-        // len
+    @Test
+    public void testLen() {
         successInput("a = len([1, 2, 3])");
         successInput("a = len([:4])");
-        successInput("a = [:4]\n" +
-                     "len(a)");
+        successInput(   "a = [:4]\n" +
+                        "len(a)");
+
         /* TODO should this not fail ?*/
-        /*failureInput("a = True\n" +
-                     "len(a)");*/
+
+        failureInput("a = False\n" +
+                     "b = len(a)");
+
         failureAt(new RootNode(new BlockNode(Arrays.asList(
                 new UnaryNode(new StringNode("Hello World"), UnaryNode.LEN)))),
                 new UnaryNode(new StringNode("Hello World"), UnaryNode.LEN)
@@ -268,25 +298,14 @@ public class SemanticUnitTests extends UraniumTestFixture {
                         new IntegerNode(7)
                 )), UnaryNode.LEN)
         ))));
-        /* TODO this works because VarAssignment returns NoneType/UnknownType I think... should it work ? */
-        /*success(new RootNode(new BlockNode(Arrays.asList(
-                new UnaryNode(new ArrayNode(Arrays.asList(
-                        new VarAssignmentNode(new IdentifierNode("var"), new IntegerNode(4)),
-                        new UnaryNode(new StringNode("4"), UnaryNode.PARSE_INT)
-                )), UnaryNode.LEN)
-        ))));*/
     }
+
 
     @Test
     public void testBinaryNode() {
         // TODO
     }
 
-    @Test
-    public void testRange() {
-        successInput(   "a = range(12)");
-        successInput(   "a = range(len(args))");
-    }
 
     @Test
     public void testFunctionDefinition() {
@@ -313,15 +332,6 @@ public class SemanticUnitTests extends UraniumTestFixture {
 
         successInput(   "def fun(a, b):\n" +
                         "   a = b\n" +
-                        "end");
-    }
-
-    @Test
-    public void testReturn() {
-        successInput(   "d = 1\n" +
-                        "def fun(a, b):\n" +
-                        "   c = d\n" +
-                        "   return c\n" +
                         "end");
     }
 

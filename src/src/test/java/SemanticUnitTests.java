@@ -384,7 +384,11 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput("True and False");
         successInput("a = True\n" +
                      "a or True");
-        /* TODO other tests but will fail if we test the same things (a = "str", True or a will not fail but should)*/
+
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                    new VarAssignmentNode(new IdentifierNode("a"), new StringNode("str")),
+                    new BinaryNode(new IdentifierNode("a"), new BoolNode(true), BinaryNode.OR)))),
+                new BinaryNode(new IdentifierNode("a"), new BoolNode(true), BinaryNode.OR));
     }
 
     @Test
@@ -507,10 +511,28 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput(   "for i in range(len(args)):\n" +
                         "   a = 1\n" +
                         "end");
+
+        successInput(   "map = {1:5, 3:2, 5:4}\n" +
+                        "for key in indexer(map):\n" +
+                        "   map[key] = \"yo\"\n" +
+                        "end");
     }
 
     @Test
     public void testVarAssignment() {
-        // TODO
+        successInput("a = 1");
+
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                new VarAssignmentNode(new BinaryNode(new IdentifierNode("a"), new IntegerNode(2), BinaryNode.IDX_ACCESS), new IntegerNode(5))))),
+                new IdentifierNode("a"));
+
+        successInput(   "a = True\n" +
+                        "b = a");
+
+        successInput(   "a = range(len([:7]))");
+
+        successInput(   "b = True\n" +
+                        "b = 1");
+
     }
 }

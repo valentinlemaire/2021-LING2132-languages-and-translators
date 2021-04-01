@@ -17,7 +17,6 @@ import norswap.utils.visitors.Walker;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static norswap.utils.Vanilla.forEachIndexed;
 import static norswap.utils.visitors.WalkVisitType.POST_VISIT;
 import static norswap.utils.visitors.WalkVisitType.PRE_VISIT;
 
@@ -30,12 +29,6 @@ public final class SemanticAnalysis {
 
     /** Current scope. */
     private Scope scope;
-
-    /** Current context for type inference (currently only to infer the type of empty arrays). */
-    private ASTNode inferenceContext;
-
-    /** Index of the current function argument. */
-    private int argumentIndex;
 
     // ---------------------------------------------------------------------------------------------
 
@@ -135,8 +128,7 @@ public final class SemanticAnalysis {
                     if (ctx == null) {
                         r.errorFor("Could not resolve: " + node.value,
                                 node, node.attr("decl"), node.attr("scope"), node.attr("type"));
-                    }
-                    else {
+                    } else {
                         r.set(node, "scope", ctx.scope);
                         r.set(node, "decl", decl);
 
@@ -191,6 +183,8 @@ public final class SemanticAnalysis {
             R.rule(node.attr("type"))
                     .using(deps)
                     .by(r -> {
+                        r.set(node, "type", Type.MAP);
+
                         Type superType = Type.UNKNOWN_TYPE;
                         for (int i = 0; i < deps.length/2; i++) {
                             superType = getSuperType(superType, r.get(i));
@@ -207,17 +201,15 @@ public final class SemanticAnalysis {
                                 return;
                             }
                         }
-                        r.set(node, "type", Type.MAP);
                     });
+        } else {
+            R.set(node, "type", Type.MAP);
         }
     }
 
     private void functionCall(FunctionCallNode node) {
 
-        this.inferenceContext = node;
-
         final Scope scope = this.scope;
-
 
         R.rule(node, "type")
                 .using(node.functionName.attr("type"))
@@ -509,7 +501,6 @@ public final class SemanticAnalysis {
             DeclarationContext maybeCtx = scope.lookup(((IdentifierNode) node.left).value);
 
             if (maybeCtx == null) {
-                this.inferenceContext = node;
                 scope.declare(((IdentifierNode) node.left).value, node);
                 R.set(node, "scope", scope);
 
@@ -539,7 +530,7 @@ public final class SemanticAnalysis {
     }
 
     public boolean isAssignableTo(Type right, Type left) {
-        return right == Type.NONE || right == Type.UNKNOWN_TYPE || right == left;
+        return right == Type.NONE || right == Type.UNKNOWN_TYPE || left == Type.UNKNOWN_TYPE || right == left;
     }
 
     public Type getSuperType(Type a, Type b) {

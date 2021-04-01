@@ -308,22 +308,17 @@ public class SemanticUnitTests extends UraniumTestFixture {
 
     @Test
     public void testLen() {
-
-        failureAt(new RootNode(new BlockNode(Arrays.asList(
-                new VarAssignmentNode(new IdentifierNode("a"), new BoolNode(false)),
-                new UnaryNode(new IdentifierNode("a"), UnaryNode.LEN)
-        ))), new UnaryNode(new IdentifierNode("a"), UnaryNode.LEN));
-
-
-        /*failureInput("a = 23\n" +
-                     "len(a)");*/
-
+        failureInput("a = 23\n" +
+                     "len(a)");
         successInput("a = len([1, 2, 3])");
         successInput("a = len([:4])");
         successInput(   "a = [:4]\n" +
                         "len(a)");
 
-
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                new VarAssignmentNode(new IdentifierNode("a"), new BoolNode(false)),
+                new UnaryNode(new IdentifierNode("a"), UnaryNode.LEN)
+        ))), new UnaryNode(new IdentifierNode("a"), UnaryNode.LEN));
         failureAt(new RootNode(new BlockNode(Arrays.asList(
                 new UnaryNode(new StringNode("Hello World"), UnaryNode.LEN)))),
                 new UnaryNode(new StringNode("Hello World"), UnaryNode.LEN)
@@ -347,13 +342,18 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput("a = 3\n" +
                      "a + 2");
         failureInput("a + 2");
-
         failureInput("a = \"3\"\n" +
                      "a + 2");
+
         failureAt(new RootNode(new BlockNode(Arrays.asList(
                 new VarAssignmentNode(new IdentifierNode("a"), new StringNode("3")),
                 new BinaryNode(new IdentifierNode("a"), new IntegerNode(2), BinaryNode.ADD)))),
                 new BinaryNode(new IdentifierNode("a"), new IntegerNode(2), BinaryNode.ADD)
+        );
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                new VarAssignmentNode(new IdentifierNode("a"), new StringNode("3")),
+                new BinaryNode(new IntegerNode(2), new IdentifierNode("a"), BinaryNode.ADD)))),
+                new BinaryNode(new IntegerNode(2), new IdentifierNode("a"), BinaryNode.ADD)
         );
     }
 

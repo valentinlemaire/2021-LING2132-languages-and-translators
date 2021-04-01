@@ -201,7 +201,10 @@ public class SemanticUnitTests extends UraniumTestFixture {
     public void testParseInt() {
         successInput("a = int(\"3\")");
         successInput("b = \"hello\"\n" +
-                "a = int(b)");
+                     "a = int(b)");
+        successInput("b = \"hello\"\n" +
+                     "a = int(b)\n" +
+                     "a = a + 1");
         failureAt(
                 new RootNode(new BlockNode(Arrays.asList(
                         new UnaryNode(new IntegerNode(3), UnaryNode.PARSE_INT)
@@ -219,7 +222,7 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput("print(3)");
         successInput("print(True)");
         successInput("b = \"hello\"\n" +
-                "print(b)");
+                     "print(b)");
         failureInput("print(a)");
     }
 
@@ -229,7 +232,8 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput("println(3)");
         successInput("println(True)");
         successInput("b = \"hello\"\n" +
-                "println(b)");
+                     "println(b)");
+        failureInput("print(a)");
     }
 
     @Test
@@ -237,6 +241,10 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput("a = -2");
         successInput("a = -4");
         successInput("a = -int(\"3\")");
+        successInput("a = 3\n" +
+                     "-a");
+        failureInput("a = \"hello\"\n" +
+                     "-a");
         failureAt(new RootNode(new BlockNode(Arrays.asList(
                 new UnaryNode(new StringNode("Hello"), UnaryNode.NEGATION)
                 ))),
@@ -249,13 +257,12 @@ public class SemanticUnitTests extends UraniumTestFixture {
         ))));
     }
 
-
     @Test
     public void testNot() {
         successInput("not True");
         successInput("not False");
         successInput("b = True\n" +
-                "not b");
+                     "not b");
         success(new RootNode(new BlockNode(Arrays.asList(
                 new UnaryNode(new BoolNode(true), UnaryNode.NOT)
         ))));
@@ -266,6 +273,11 @@ public class SemanticUnitTests extends UraniumTestFixture {
         failureAt(new RootNode(new BlockNode(Arrays.asList(
                 new UnaryNode(new IntegerNode(7), UnaryNode.NOT)))),
                 new UnaryNode(new IntegerNode(7), UnaryNode.NOT)
+        );
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                new VarAssignmentNode(new IdentifierNode("var"), new IntegerNode(3)),
+                new UnaryNode(new IdentifierNode("var"), UnaryNode.NOT)))),
+                new UnaryNode(new IdentifierNode("var"), UnaryNode.NOT)
         );
     }
 

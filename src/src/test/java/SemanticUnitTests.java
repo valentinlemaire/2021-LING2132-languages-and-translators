@@ -177,8 +177,8 @@ public class SemanticUnitTests extends UraniumTestFixture {
     public void testSort() {
         successInput("a = sort([3, 2, 5, 4])");
         successInput("a = sort([\"PO\", \"TA\", \"TOES\"])");
-        successInput("b = [1, 3, 2, 7]\n" +
-                "a = sort(b)");
+        successInput(   "b = [1, 3, 2, 7]\n" +
+                        "a = sort(b)");
 
         failureInput(   "b = False\n" +
                         "a = sort(b)");
@@ -296,15 +296,21 @@ public class SemanticUnitTests extends UraniumTestFixture {
 
     @Test
     public void testLen() {
+
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                new VarAssignmentNode(new IdentifierNode("a"), new BoolNode(false)),
+                new UnaryNode(new IdentifierNode("a"), UnaryNode.LEN)
+        ))), new UnaryNode(new IdentifierNode("a"), UnaryNode.LEN));
+
+
+        /*failureInput("a = 23\n" +
+                     "len(a)");*/
+
         successInput("a = len([1, 2, 3])");
         successInput("a = len([:4])");
         successInput(   "a = [:4]\n" +
-                "len(a)");
+                        "len(a)");
 
-        /* TODO should this not fail ?*/
-
-        failureInput("a = False\n" +
-                "b = len(a)");
 
         failureAt(new RootNode(new BlockNode(Arrays.asList(
                 new UnaryNode(new StringNode("Hello World"), UnaryNode.LEN)))),
@@ -328,32 +334,28 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput("1 % 2");
         successInput("a = 3\n" +
                      "a + 2");
-        /* TODO both tests should fail
-            (1st because a is not initialised and 2nd because type(a) is a string and b is an int)
-            wtf ? */
-        /*failureInput("a + 2");*/
-        /*failureInput("a = \"3\"\n" +
-                     "a + 2");*/
-        /* TODO should this fail ? */
-        /*failureAt(new RootNode(new BlockNode(Arrays.asList(
+        failureInput("a + 2");
+
+        failureInput("a = \"3\"\n" +
+                     "a + 2");
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
                 new VarAssignmentNode(new IdentifierNode("a"), new StringNode("3")),
                 new BinaryNode(new IdentifierNode("a"), new IntegerNode(2), BinaryNode.ADD)))),
                 new BinaryNode(new IdentifierNode("a"), new IntegerNode(2), BinaryNode.ADD)
-        );*/
+        );
     }
 
     @Test
     public void testEqualityComparison() {
         successInput("1 == 2");
         successInput("1 != 2");
-        /* TODO Parse Error on the next ones... weird */
-        /*successInput("\"1\" == \"2\"");*/
-        /*successInput("[1] == [1, 2]");*/
+        successInput("\"1\" == \"2\"");
+        successInput("[1] == [1, 2]");
         successInput("a = 1\n" +
                      "a == 2");
         /* TODO Seems like equality doesn't work with strings (parser "problem") */
-        /*successInput("a = \"Hello World\"\n" +
-                     "a == \"PO-TA-TOES\"");*/
+        successInput("a = \"Hello World\"\n" +
+                     "a == \"PO-TA-TOES\"");
     }
 
     @Test
@@ -364,7 +366,7 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput("1 >= 2");
         successInput("1 < 2");
         /* TODO Again, we did not implement equality and inequality between strings in the parser */
-        /*successInput("\"Hello\" < \"Hello\"");*/
+        successInput("\"Hello\" < \"Hello\"");
     }
 
     @Test
@@ -381,9 +383,9 @@ public class SemanticUnitTests extends UraniumTestFixture {
                      "a[1]");
         successInput("[:3][2]");
         /* TODO this does not fail ???? */
-        /*failureInput("\"Hello\"[2]");*/
-        /*failureInput("a = [1, 2, 3]\n" +
-                     "a[\"hello\"]");*/
+        failureInput("True[2]");
+        failureInput("a = [1, 2, 3]\n" +
+                     "a[\"hello\"]");
         /* TODO Again, check type of a variable ? */
         /*failureInput("a = True\n" +
                      "a[1]");*/

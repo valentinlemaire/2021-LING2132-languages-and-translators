@@ -89,9 +89,11 @@ public final class NSParser extends Grammar {
     public rule string = seq(QUOTE, not_quote, QUOTE).word().push($ -> new StringNode($.$0()));
 
     // Integers
-    public rule integer = seq(digit.at_least(1), not(identifier))
+    public rule integer_lit = seq(digit.at_least(1), not(identifier))
             .word()
             .push($ -> new IntegerNode(Integer.parseInt($.str())));
+
+    public rule integer = lazy(() -> choice(integer_lit, this.len, this.parse_int));
 
     // Basic boolean values
     public rule boolean_values = choice(TRUE, FALSE);
@@ -116,7 +118,7 @@ public final class NSParser extends Grammar {
     // Program arguments
     // public rule program_args = lazy(() -> seq(ARGS, LBRACKET, this.expression, RBRACKET).push($ -> new UnaryNode($.$0(), UnaryNode.ARG_ACCESS)));
 
-    public rule any_value = lazy(() -> choice(multiple_indexer_access, function_call, this.len, this.parse_int, identifier));
+    public rule any_value = lazy(() -> choice(multiple_indexer_access, function_call, identifier, NONE));
 
     // NUMERICAL OPERATIONS
 
@@ -153,18 +155,22 @@ public final class NSParser extends Grammar {
 
     // Value comparison
     public rule comparison = lazy(() -> left_expression()
-            .operand(choice(numerical_operation, this.bool_operator))
+            .operand(choice(string, this.indexable, this.bool_operator, numerical_operation))
             .infix(L,   $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.L))
             .infix(G,   $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.G))
-            .infix(EQ,  $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.EQ))
             .infix(LEQ, $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.LEQ))
-            .infix(GEQ, $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.GEQ))
-            .infix(NEQ, $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.NEQ)));
+            .infix(GEQ, $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.GEQ)));
+
+    public rule eq_neq = lazy(() -> left_expression()
+            .operand(choice(string, this.indexable, this.bool_operator, numerical_operation))
+            .infix(EQ,  $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.EQ))
+            .infix(NEQ, $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.NEQ))
+            .requireOperator());
 
 
     // Logical operations
     public rule and_operation = lazy(() -> left_expression()
-            .operand(comparison)
+            .operand(choice(eq_neq, comparison))
             .infix(AND, $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.AND)));
 
 
@@ -177,10 +183,10 @@ public final class NSParser extends Grammar {
     public rule paren_primary_bool_operator = lazy(() -> seq(LPAREN, choice(or_operation, this.logical_negation), RPAREN));
 
     // Used inside boolean operations
-    public rule bool_operator = lazy(() -> choice(paren_primary_bool_operator, this.logical_negation, any_value, boolean_values));
+    public rule bool_operator = lazy(() -> choice(paren_primary_bool_operator, this.logical_negation, boolean_values));
 
     // Logical Negation
-    public rule logical_negation = seq(NOT, bool_operator)
+    public rule logical_negation = seq(NOT, choice(bool_operator, any_value))
                                     .push($ -> new UnaryNode($.$0(), UnaryNode.NOT));
 
     // Final boolean expression
@@ -215,19 +221,19 @@ public final class NSParser extends Grammar {
     public rule range = seq(RANGE, LPAREN, choice(integer, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.RANGE));
 
     // indexer function (for map)
-    public rule indexer = lazy(() -> seq(INDEXER, LPAREN, this.indexable, RPAREN)).push($ -> new UnaryNode($.$0(), UnaryNode.INDEXER));
+    public rule indexer = lazy(() -> seq(INDEXER, LPAREN, choice(this.indexable, any_value), RPAREN)).push($ -> new UnaryNode($.$0(), UnaryNode.INDEXER));
 
-    public rule indexable = choice(array, map, sort, range, indexer, any_value, ARGS);
+    public rule indexable = choice(map, sort, range, indexer, ARGS, array);
 
     // len function
-    public rule len = seq(LEN, LPAREN, indexable, RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.LEN));
+    public rule len = seq(LEN, LPAREN, choice(indexable, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.LEN));
 
     // Parsing strings into integers
     public rule parse_int = seq(INT, LPAREN, choice(string, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.PARSE_INT));
 
 
     // Regrouping expressions
-    public rule expression = choice(string, NONE, or_operation, numerical_operation, indexable);
+    public rule expression = choice(or_operation, NONE, indexable, string);
 
     // STATEMENTS
 
@@ -259,7 +265,7 @@ public final class NSParser extends Grammar {
 
 
     // for (EXTRA)
-    public rule for_ = lazy(() -> seq(FOR, identifier, IN, indexable, COLON, this.statement_sequence, END))
+    public rule for_ = lazy(() -> seq(FOR, identifier, IN, choice(indexable, any_value), COLON, this.statement_sequence, END))
                             .push($ -> new ForNode($.$0(), $.$1(), $.$2()));
 
 

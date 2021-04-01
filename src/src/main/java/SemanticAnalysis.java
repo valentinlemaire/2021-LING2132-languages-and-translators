@@ -111,15 +111,13 @@ public final class SemanticAnalysis {
         R.set(node, "type", Type.NONE);
     }
 
-    private void identifier(IdentifierNode node) {
+    private void identifier(final IdentifierNode node) {
         final Scope scope = this.scope;
 
-        // Try to lookup immediately. This must succeed for variables, but not necessarily for
-        // functions or types. By looking up now, we can report looked up variables later
-        // as being used before being defined.
         DeclarationContext maybeCtx = scope.lookup(node.value);
 
         if (maybeCtx != null) {
+            R.set(node, "decl",  maybeCtx.declaration);
             R.set(node, "scope", maybeCtx.scope);
 
             R.rule(node, "type")
@@ -128,17 +126,27 @@ public final class SemanticAnalysis {
             return;
         }
 
-        R.rule()
+        // Re-lookup after the scopes have been built.
+        R.rule(node.attr("decl"), node.attr("scope"))
                 .by(r -> {
                     DeclarationContext ctx = scope.lookup(node.value);
+                    DeclarationNode decl = ctx == null ? null : ctx.declaration;
 
                     if (ctx == null) {
                         r.errorFor("Could not resolve: " + node.value,
-                                node, node.attr("scope"), node.attr("type"));
-                    } else {
-                        r.errorFor("Variable or function used before declaration: " + node.value,
-                                    node, node.attr("type"));
+                                node, node.attr("decl"), node.attr("scope"), node.attr("type"));
+                    }
+                    else {
+                        r.set(node, "scope", ctx.scope);
+                        r.set(node, "decl", decl);
 
+                        if (decl instanceof VarAssignmentNode)
+                            r.errorFor("Variable used before declaration: " + node.value,
+                                    node, node.attr("type"));
+                        else
+                            R.rule(node, "type")
+                                    .using(decl, "type")
+                                    .by(Rule::copyFirst);
                     }
                 });
     }
@@ -227,7 +235,7 @@ public final class SemanticAnalysis {
                 });
     }
 
-    private void unaryExpression(UnaryNode node) {
+    private void unaryExpression(final UnaryNode node) {
         switch (node.code) {
             case UnaryNode.RANGE:
                 R.rule(node.attr("type"))
@@ -505,6 +513,10 @@ public final class SemanticAnalysis {
                 scope.declare(((IdentifierNode) node.left).value, node);
                 R.set(node, "scope", scope);
 
+                R.rule(node, "type")
+                        .using(node.right.attr("type"))
+                        .by(Rule::copyFirst);
+                return;
             }
         }
 
@@ -516,9 +528,12 @@ public final class SemanticAnalysis {
 
                     r.set(node, "type", right); // the type of the assignment is the right-side type
 
+
                     if ((node.left instanceof BinaryNode && ((BinaryNode) node.left).code == BinaryNode.IDX_ACCESS)) { // variables can be assigned to a new type but not array elements
                         if (!isAssignableTo(right, left))
                             r.errorFor("Trying to assign a value to a non-compatible lvalue.", node);
+
+
                     }
                 });
     }

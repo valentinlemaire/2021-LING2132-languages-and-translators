@@ -336,7 +336,6 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput("[1] == [1, 2]");
         successInput("a = 1\n" +
                      "a == 2");
-        /* TODO Seems like equality doesn't work with strings (parser "problem") */
         successInput("a = \"Hello World\"\n" +
                      "a == \"PO-TA-TOES\"");
     }
@@ -348,7 +347,6 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput("1 > 2");
         successInput("1 >= 2");
         successInput("1 < 2");
-        /* TODO Again, we did not implement equality and inequality between strings in the parser */
         successInput("\"Hello\" < \"Hello\"");
     }
 
@@ -362,16 +360,15 @@ public class SemanticUnitTests extends UraniumTestFixture {
 
     @Test
     public void testIndexAccess() {
+        failureAt(new RootNode(new BlockNode(Arrays.asList(new BinaryNode(new StringNode("Hello"), new IntegerNode(2), BinaryNode.IDX_ACCESS)))), new BinaryNode(new StringNode("Hello"), new IntegerNode(2), BinaryNode.IDX_ACCESS));
+
         successInput("a = [1, 2, 3]\n" +
                      "a[1]");
         successInput("[:3][2]");
-        /* TODO this does not fail ???? */
-        failureInput("True[2]");
         failureInput("a = [1, 2, 3]\n" +
                      "a[\"hello\"]");
-        /* TODO Again, check type of a variable ? */
-        /*failureInput("a = True\n" +
-                     "a[1]");*/
+        failureInput("a = True\n" +
+                     "a[1]");
     }
 
     @Test

@@ -14,7 +14,7 @@ import java.nio.file.Path;
 public class FileTests {
     public static void main(String[] args) {
 
-        String[] files = new String[] {"fibonacci.ns", "fizzbuzz.ns", "integers.ns", "primes.ns", "strings.ns"};
+        String[] files = new String[] {"fibonacci.ns", "fizzbuzz.ns", "sort.ns", "prime.ns", "uniq.ns"};
 
         for (int i = 0; i < files.length; i++) {
             try {

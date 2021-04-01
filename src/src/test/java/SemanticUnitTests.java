@@ -534,5 +534,6 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput(   "b = True\n" +
                         "b = 1");
 
+
     }
 }

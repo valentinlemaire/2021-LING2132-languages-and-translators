@@ -1,17 +1,9 @@
-def fibonacci(n):
-    def fibonacci_2(p_1, p_2, cur, max):
-        println(p_1 + p_2)
-        if cur == max: 
-            return p_1 + p_2
-        else:
-            return fibonacci_2(p_2, p_1+p_2, cur+1, max)
-        end
-    end 
-    if n == 1:
-        println(0)
-    else:
-        fibonacci_2(0, 1, 2, n)
+def fibonacci(a, b, n):
+    if n == 0:
+        return
     end
+    println(a)
+    fibonacci(b, a+b, n-1)
 end
 
-fibonacci(int(args[0]))
+fibonacci(0, 1, int(args[0]))

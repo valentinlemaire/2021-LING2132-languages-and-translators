@@ -151,8 +151,25 @@ public class SemanticUnitTests extends UraniumTestFixture {
 
     @Test
     public void testIndexer() {
-        //TODO
-        // TODO should return [0, 1, 2, 3] if indexer(array) and [key1, key2, key3] if indexer(map)
+        successInput("a = [1, 3, 2, 4]\n" +
+                     "indexer(a)");
+        successInput("a = {\"a\" : 1, \"b\" : 2, \"d\" : 4, \"c\" : 3}\n" +
+                     "indexer(a)");
+        failureInput("a = 3\n" +
+                     "indexer(a)");
+        failureInput("a = \"PO-TA-TOES\"\n" +
+                     "indexer(a)");
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                new UnaryNode(new StringNode("Hello"), UnaryNode.INDEXER)
+                ))),
+                new UnaryNode(new StringNode("Hello"), UnaryNode.INDEXER)
+        );
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                new VarAssignmentNode(new IdentifierNode("a"), new StringNode("Test")),
+                new UnaryNode(new IdentifierNode("a"), UnaryNode.INDEXER)
+                ))),
+                new UnaryNode(new IdentifierNode("a"), UnaryNode.INDEXER)
+        );
 
     }
 

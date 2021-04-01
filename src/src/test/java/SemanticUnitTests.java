@@ -384,9 +384,11 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput("True and False");
         successInput("a = True\n" +
                      "a or True");
-        /* TODO other tests but will fail if we test the same things (a = "str", True or a will not fail but should)*/
-        failureInput("a = \"str\"\n" +
-                    "a or True");
+
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                    new VarAssignmentNode(new IdentifierNode("a"), new StringNode("str")),
+                    new BinaryNode(new IdentifierNode("a"), new BoolNode(true), BinaryNode.OR)))),
+                new BinaryNode(new IdentifierNode("a"), new BoolNode(true), BinaryNode.OR));
     }
 
     @Test

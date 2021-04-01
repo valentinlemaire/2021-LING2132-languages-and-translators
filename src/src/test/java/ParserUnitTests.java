@@ -35,6 +35,7 @@ public class ParserUnitTests extends AutumnTestFixture {
         successExpect("a[b[c[1]]]", new BinaryNode(new IdentifierNode("a"), new BinaryNode(new IdentifierNode("b"), new BinaryNode(new IdentifierNode("c"), new IntegerNode(1), BinaryNode.IDX_ACCESS), BinaryNode.IDX_ACCESS), BinaryNode.IDX_ACCESS));
         successExpect("a[\"test\"]", new BinaryNode(new IdentifierNode("a"), new StringNode("test"), BinaryNode.IDX_ACCESS));
         success("a[1][2]");
+        failure("\"Hello\"[2]");
     }
 
     @Test

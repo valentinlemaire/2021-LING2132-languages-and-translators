@@ -3,20 +3,16 @@ def fizzbuzz(n) :
     b = False
 
     while i <= n :
-        if i % 3 == 0 :
-            b = True
-            print("Fizz")
+        if i % 15 == 0:
+            println("FizzBuzz")
+        elsif i % 3 == 0 :
+            println("Fizz")
+        elsif i % 5 == 0 :
+            println("Buzz")
+        else:
+            println(i)
         end
-        if i % 5 == 0 :
-            b = True
-            print("Buzz")
-        end
-        if not b :
-            print(i)
-        end
-
-        print("\n")
-        b = False
+         i = i + 1
     end
 end
 

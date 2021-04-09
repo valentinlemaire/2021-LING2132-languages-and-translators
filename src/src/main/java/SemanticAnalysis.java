@@ -68,6 +68,7 @@ public final class SemanticAnalysis {
         walker.register(FunctionDefinitionNode.class,   PRE_VISIT,  analysis::functionDeclaration);
         walker.register(ForNode.class,                  PRE_VISIT,  analysis::for_);
         walker.register(IfNode.class,                   PRE_VISIT,  analysis::if_);
+        walker.register(ElseNode.class,                 PRE_VISIT,  analysis::else_);
         walker.register(WhileNode.class,                PRE_VISIT,  analysis::while_);
 
         walker.register(RootNode.class,                 POST_VISIT, analysis::popScope);
@@ -132,13 +133,9 @@ public final class SemanticAnalysis {
                         r.set(node, "scope", ctx.scope);
                         r.set(node, "decl", decl);
 
-                        if (decl instanceof VarAssignmentNode)
-                            r.errorFor("Variable used before declaration: " + node.value,
-                                    node, node.attr("type"));
-                        else
-                            R.rule(node, "type")
-                                    .using(decl, "type")
-                                    .by(Rule::copyFirst);
+                        r.errorFor("Variable used before declaration: " + node.value,
+                                node, node.attr("type"));
+
                     }
                 });
     }
@@ -212,18 +209,21 @@ public final class SemanticAnalysis {
         final Scope scope = this.scope;
 
         R.rule(node, "type")
-                .using(node.functionName.attr("type"))
+                .using()
                 .by(r -> {
                     r.set(0, Type.UNKNOWN_TYPE);
 
                     DeclarationContext maybeCtx = scope.lookup(node.functionName.value);
 
-                    List<ParameterNode> params = ((FunctionDefinitionNode) maybeCtx.declaration).args;
-                    List<ASTNode> args = node.args;
+                    if (maybeCtx != null) {
+                        List<ParameterNode> params = ((FunctionDefinitionNode) maybeCtx.declaration).args;
+                        List<ASTNode> args = node.args;
 
-                    if (params.size() != args.size())
-                        r.errorFor("Wrong number of arguments, expected "+params.size()+" but got "+args.size(),
-                                node);
+                        if ((params == null && args != null) || (args == null && params != null) || params.size() != args.size())
+                            r.errorFor("Wrong number of arguments, expected "+params.size()+" but got "+args.size(),
+                                    node);
+                    }
+
                 });
     }
 
@@ -402,8 +402,8 @@ public final class SemanticAnalysis {
                 Type right = r.get(1);
 
                 if (left == Type.ARRAY && right == Type.INTEGER
-                ||  left == Type.MAP
-                ||  left == Type.UNKNOWN_TYPE || right == Type.UNKNOWN_TYPE)
+                ||  (left == Type.MAP && right != Type.NONE)
+                ||  left == Type.UNKNOWN_TYPE && right != Type.NONE || right == Type.UNKNOWN_TYPE)
                     r.set(0, Type.UNKNOWN_TYPE);
                 else if (left == Type.ARRAY)
                     r.error("Arrays can only be indexed with integers", node);
@@ -455,6 +455,19 @@ public final class SemanticAnalysis {
                         r.error("If statement must have a boolean as condition", node);
                     }
                 });
+    }
+
+    public void else_(ElseNode node) {
+        if (node.bool != null) {
+            R.rule()
+                    .using(node.bool, "type")
+                    .by(r -> {
+                        Type conditionType = r.get(0);
+                        if (!(conditionType == Type.BOOLEAN || conditionType == Type.UNKNOWN_TYPE)) {
+                            r.error("elsif statement must have a boolean as condition", node);
+                        }
+                    });
+        }
     }
 
     public void while_(WhileNode node) {

@@ -1,12 +1,10 @@
 import ast.*;
 import norswap.autumn.AutumnTestFixture;
-import norswap.autumn.positions.LineMapString;
 import norswap.uranium.Reactor;
 import norswap.uranium.UraniumTestFixture;
 import norswap.utils.visitors.Walker;
 import org.testng.annotations.Test;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 
 public class SemanticUnitTests extends UraniumTestFixture {

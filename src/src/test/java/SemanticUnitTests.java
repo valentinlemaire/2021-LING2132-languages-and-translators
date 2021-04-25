@@ -129,7 +129,6 @@ public class SemanticUnitTests extends UraniumTestFixture {
                      "testFunction(\"Hello World\", 3)");
     }
 
-
     @Test
     public void testRange() {
         successInput("a = range(3)");

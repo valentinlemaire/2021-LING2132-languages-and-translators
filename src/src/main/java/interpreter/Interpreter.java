@@ -1,5 +1,6 @@
 package interpreter;
 
+import ast.ASTNode;
 import norswap.uranium.Reactor;
 import norswap.utils.Util;
 import norswap.utils.exceptions.Exceptions;
@@ -19,7 +20,7 @@ import static norswap.utils.Vanilla.map;
 public final class Interpreter {
     // ---------------------------------------------------------------------------------------------
 
-    private final ValuedVisitor<SighNode, Object> visitor = new ValuedVisitor<>();
+    private final ValuedVisitor<ASTNode, Object> visitor = new ValuedVisitor<>();
     private final Reactor reactor;
     private ScopeStorage storage = null;
     private RootScope rootScope;

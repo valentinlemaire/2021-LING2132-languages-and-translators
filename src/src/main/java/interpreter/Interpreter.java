@@ -7,6 +7,7 @@ import norswap.utils.exceptions.Exceptions;
 import norswap.utils.exceptions.NoStackException;
 import norswap.utils.visitors.ValuedVisitor;
 import scopes.RootScope;
+import scopes.Scope;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -47,7 +48,7 @@ public final class Interpreter {
         visitor.register(VarAssignmentNode.class,       this::varAssignment);
 
         // COLLECTIONS
-        visitor.register(MapNode.class,                 this::map);
+        visitor.register(MapNode.class,                 this::map_);
         visitor.register(ArrayNode.class,               this::array);
 
         // OPERATIONS
@@ -68,23 +69,71 @@ public final class Interpreter {
         visitor.registerFallback(node -> null);
     }
 
+    public Object interpret(ASTNode root) {
+        try {
+            return run(root);
+        } catch (PassthroughException e) {
+            throw Exceptions.runtime(e.getCause());
+        }
+    }
+
+    public Object run(ASTNode node) {
+        try {
+            return visitor.apply(node);
+        } catch (InterpreterException | PassthroughException | Return e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new InterpreterException("exception while executing " + node, e);
+        }
+    }
+
+    private static class Return extends NoStackException {
+        final Object value;
+        private Return (Object value) {
+            this.value = value;
+        }
+    }
+
+    private <T> T get(ASTNode node) {
+        return cast(run(node));
+    }
+
+    private boolean isPrimitive(Object o) {
+        return o instanceof String || o instanceof Integer || o instanceof Boolean;
+    }
+
 
     // SCOPES
     private Object root(RootNode n) {
-        /* TODO */
+        assert storage == null;
+
+        rootScope = reactor.get(n, "scope");
+        storage = rootStorage = new ScopeStorage(rootScope, null);
+        storage.initRoot(rootScope);
+
+        try {
+            n.block.statements.forEach(this::run);
+        } catch (Return r) {
+            return r.value;
+            // allow returning from the main script
+        } finally {
+            storage = null;
+        }
         return null;
     }
 
     private Object block(BlockNode n) {
-        /* TODO */
+        Scope scope = reactor.get(n, "scope");
+        storage = new ScopeStorage(scope, storage);
+        n.statements.forEach(this::run);
+        storage = storage.parent;
         return null;
     }
 
 
     // PRIMITIVE LITERALS
     private Object none(NoneNode n) {
-        /* TODO singleton 'None' */
-        return null;
+        return None.INSTANCE;
     }
 
     private Boolean bool(BoolNode n) {
@@ -102,75 +151,90 @@ public final class Interpreter {
 
     // VARIABLES
     private Object identifier(IdentifierNode n) {
-        /* TODO */
+        /* TODO Val */
         return null;
     }
 
     private Object varAssignment(VarAssignmentNode n) {
-        /* TODO */
+        /* TODO Val */
         return null;
     }
 
 
     // COLLECTIONS
-    private Object map(MapNode n) {
-        /* TODO */
-        return null;
+    private Object map_(MapNode n) {
+        HashMap<Object, Object> dictionary = new HashMap<>();
+        if (n.elements != null) {
+            for (BinaryNode pair : n.elements) {
+                if (isPrimitive(get(pair.left))) {
+                    dictionary.put(get(pair.left), get(pair.right));
+                } else {
+                    throw new PassthroughException(new RuntimeException("Cannot use "+get(pair.left)+" as key in map"));
+                }
+            }
+        }
+        return dictionary;
     }
 
     private Object array(ArrayNode n) {
-        /* TODO */
-        return null;
+        if (n.elements != null) {
+            return map(n.elements, new Object[0], visitor);
+        } else if (n.size != null) {
+            return new Object[(int) get(n.size)];
+        }
+
+        // Should not happen
+        throw new PassthroughException(new RuntimeException("Illegal declaration of array "+n));
     }
 
 
     // OPERATIONS
     private Object unary(UnaryNode n) {
-        /* TODO */
+        /* TODO Val */
         return null;
     }
 
     private Object binary(BinaryNode n) {
-        /* TODO */
+        /* TODO Gus */
         return null;
     }
 
 
     // STATEMENTS
     private Object if_(IfNode n) {
-        /* TODO */
+        /* TODO Val */
         return null;
     }
 
     private Object else_(ElseNode n) {
-        /* TODO */
+        /* TODO Val */
         return null;
     }
 
     private Object for_(ForNode n) {
-        /* TODO */
+        /* TODO Val */
         return null;
     }
 
     private Object while_(WhileNode n) {
-        /* TODO */
+        /* TODO Gus */
         return null;
     }
 
 
     // FUNCTIONS
     private Object functionDefinition(FunctionDefinitionNode n) {
-        /* TODO */
+        /* TODO Gus  */
         return null;
     }
 
     private Object functionCall(FunctionCallNode n) {
-        /* TODO */
+        /* TODO  Gus */
         return null;
     }
 
     private Object parameter(ParameterNode n) {
-        /* TODO */
+        /* TODO Gus */
         return null;
     }
 }

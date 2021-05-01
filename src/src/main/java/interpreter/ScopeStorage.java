@@ -68,7 +68,7 @@ public final class ScopeStorage
     {
         set(root, root._true  .name(), true);
         set(root, root._false .name(), false);
-        set(root, root._none  .name(), null);
+        set(root, root._none  .name(), None.INSTANCE);
 
         // Function and types are not assigned values in frames - instead they derive
         // their runtime value values from the corresponding DeclarationNode.

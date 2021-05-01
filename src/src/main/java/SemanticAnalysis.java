@@ -142,7 +142,8 @@ public final class SemanticAnalysis {
 
     private void array(ArrayNode node) {
         if (node.elements != null) {
-            Attribute[] deps = node.elements.stream().map(it -> it.attr("type")).toArray(Attribute[]::new);
+            R.set(node, "type", Type.ARRAY);
+            /*Attribute[] deps = node.elements.stream().map(it -> it.attr("type")).toArray(Attribute[]::new);
             R.rule(node.attr("type"))
                     .using(deps)
                     .by(r -> {
@@ -155,7 +156,7 @@ public final class SemanticAnalysis {
                             }
                         }
                         r.set(node, "type", Type.ARRAY);
-                    });
+                    });*/
         } else if (node.size != null) {
             R.rule(node.attr("type"))
                     .using(node.size.attr("type"))
@@ -171,7 +172,8 @@ public final class SemanticAnalysis {
     }
 
     private void map(MapNode node) {
-        if (node.elements != null) {
+        R.set(node, "type", Type.MAP);
+        /*if (node.elements != null) {
             Attribute[] deps  = Stream.concat(
                     node.elements.stream().map(it -> it.left .attr("type")),
                     node.elements.stream().map(it -> it.right.attr("type")))
@@ -201,7 +203,7 @@ public final class SemanticAnalysis {
                     });
         } else {
             R.set(node, "type", Type.MAP);
-        }
+        }*/
     }
 
     private void functionCall(FunctionCallNode node) {

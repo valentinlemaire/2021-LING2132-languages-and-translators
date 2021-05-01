@@ -156,7 +156,7 @@ public class ParserUnitTests extends AutumnTestFixture {
     @Test
     public void testIf() {
         this.rule = parser.if_;
-        successExpect("if True: x = 1 end", new IfNode(new BoolNode(true), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)))), Arrays.asList(new ASTNode[]{})));
+        successExpect("if True: x = 1 end", new IfNode(new BoolNode(true), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)))), Arrays.asList(new ElseNode[]{})));
         successExpect("if True: x = 1 elsif False: x = 2 elsif b: x = 3 else: x = 4 end",
                 new IfNode(new BoolNode(true), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)))),
                         Arrays.asList(

@@ -6,9 +6,9 @@ import java.util.Objects;
 public class IfNode extends ASTNode {
     public ASTNode bool;
     public BlockNode block;
-    public List<ASTNode> else_blocks;
+    public List<ElseNode> else_blocks;
 
-    public IfNode(ASTNode bool, BlockNode block, List<ASTNode> else_blocks) {
+    public IfNode(ASTNode bool, BlockNode block, List<ElseNode> else_blocks) {
         this.bool = bool;
         this.block = block;
         this.else_blocks = else_blocks;

@@ -1,18 +1,23 @@
 package interpreter;
 
+import Types.Type;
 import ast.*;
 import norswap.uranium.Reactor;
 import norswap.utils.Util;
 import norswap.utils.exceptions.Exceptions;
 import norswap.utils.exceptions.NoStackException;
 import norswap.utils.visitors.ValuedVisitor;
+import scopes.DeclarationKind;
 import scopes.RootScope;
 import scopes.Scope;
+import scopes.SyntheticDeclarationNode;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static norswap.utils.Util.cast;
 import static norswap.utils.Vanilla.coIterate;
@@ -102,6 +107,28 @@ public final class Interpreter {
         return o instanceof String || o instanceof Integer || o instanceof Boolean;
     }
 
+    private String convertToString (Object arg) {
+        if (arg == None.INSTANCE)
+            return "None";
+        else if (arg instanceof Object[])
+            return Arrays.deepToString((Object[]) arg);
+        else if (arg instanceof FunctionDefinitionNode)
+            return ((FunctionDefinitionNode) arg).name.value;
+        else if (arg instanceof HashMap)
+            return "{"+((HashMap<?, ?>) arg).entrySet().stream().map((e) -> convertToString(e.getKey()) + ": " + convertToString(e.getValue())).collect(Collectors.joining(", ")) + "}";
+        else
+            return arg.toString();
+    }
+
+    private String type(Object arg) {
+        if (arg instanceof Integer)  return "int";
+        if (arg instanceof Boolean)  return "bool";
+        if (arg instanceof String)   return "string";
+        if (arg instanceof Object[]) return "array";
+        if (arg instanceof HashMap)  return "map";
+        return "unknown type";
+    }
+
 
     // SCOPES
     private Object root(RootNode n) {
@@ -151,14 +178,68 @@ public final class Interpreter {
 
     // VARIABLES
     private Object identifier(IdentifierNode n) {
-        /* TODO Val */
-        return null;
+        Scope scope = reactor.get(n, "scope");
+        DeclarationNode decl = reactor.get(n, "decl");
+
+        if (decl instanceof VarAssignmentNode
+                || decl instanceof ParameterNode
+                || decl instanceof SyntheticDeclarationNode
+                && ((SyntheticDeclarationNode) decl).kind() == DeclarationKind.VARIABLE)
+            return scope == rootScope
+                    ? rootStorage.get(scope, n.value)
+                    : storage.get(scope, n.value);
+
+        return decl;
     }
 
     private Object varAssignment(VarAssignmentNode n) {
-        /* TODO Val */
-        return null;
+        if (n.left instanceof IdentifierNode) {
+            Scope scope = reactor.get(n.left, "scope");
+            String name = ((IdentifierNode) n.left).value;
+            Object rvalue = get(n.right);
+            storage.set(scope, name, rvalue);
+            return rvalue;
+        }
+
+        if (n.left instanceof BinaryNode && ((BinaryNode) n.left).code == BinaryNode.IDX_ACCESS) {
+            BinaryNode arrayAccess = (BinaryNode) n.left;
+            Object indexable = get(arrayAccess.left);
+            if (indexable == None.INSTANCE) {
+                throw new PassthroughException(new NullPointerException("Indexing null array " + n.left));
+            } else if (indexable instanceof Object[]) {
+                Object[] array = (Object[]) indexable;
+                int index = getIndex(arrayAccess.right);
+                try {
+                    array[index] = get(n.right);
+                    return null;
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    throw new PassthroughException(e);
+                }
+            } else if (indexable instanceof HashMap) {
+                HashMap<Object, Object> map = (HashMap<Object, Object>) indexable;
+                Object indexer = get(arrayAccess.right);
+                if (isPrimitive(indexer)) {
+                    map.put(indexer, get(n.right));
+                } else {
+                    throw new PassthroughException(new RuntimeException("Can only use string, integers and booleans as keys of a map, not "+type(indexer)));
+                }
+                return null;
+            }
+        }
+
+        throw new Error("should not reach here");
     }
+
+    private int getIndex (ASTNode node) {
+        long index = get(node);
+        if (index < 0)
+            throw new ArrayIndexOutOfBoundsException("Negative index: " + index);
+        if (index >= Integer.MAX_VALUE - 1)
+            throw new ArrayIndexOutOfBoundsException("Index exceeds max array index (2ˆ31 - 2): " + index);
+        return (int) index;
+    }
+
+
 
 
     // COLLECTIONS
@@ -169,7 +250,7 @@ public final class Interpreter {
                 if (isPrimitive(get(pair.left))) {
                     dictionary.put(get(pair.left), get(pair.right));
                 } else {
-                    throw new PassthroughException(new RuntimeException("Cannot use "+get(pair.left)+" as key in map"));
+                    throw new PassthroughException(new RuntimeException("Cannot use "+type(get(pair.left))+" as key in map"));
                 }
             }
         }
@@ -183,15 +264,94 @@ public final class Interpreter {
             return new Object[(int) get(n.size)];
         }
 
-        // Should not happen
-        throw new PassthroughException(new RuntimeException("Illegal declaration of array "+n));
+        throw new Error("should not reach here");
     }
 
 
     // OPERATIONS
     private Object unary(UnaryNode n) {
-        /* TODO Val */
-        return null;
+        Object arg;
+        switch (n.code) {
+            case UnaryNode.RANGE:
+                arg = get(n.child);
+                if (arg instanceof Integer) {
+                    return IntStream.range(0, (int) arg - 1).toArray();
+                } else {
+                    throw new PassthroughException(new RuntimeException("Argument of range function must be an integer, not " + type(arg)));
+                }
+            case UnaryNode.INDEXER:
+                arg = get(n.child);
+                if (arg instanceof Object[]) {
+                    Object[] array = (Object[]) arg;
+                    return IntStream.range(0, array.length - 1).toArray();
+                } else if (arg instanceof HashMap) {
+                    HashMap<Object, Object> map = (HashMap<Object, Object>) arg;
+                    return map.keySet().toArray();
+                } else {
+                    throw new PassthroughException(new RuntimeException("Argument of range function must be a map or an array, not " + type(arg)));
+                }
+            case UnaryNode.SORT:
+                arg = get(n.child);
+                if (arg instanceof Object[]) {
+                    Object[] original = (Object[]) arg;
+                    Object[] copy = original.clone();
+                    try {
+                        Arrays.sort(copy);
+                        return copy;
+                    } catch (ClassCastException e) {
+                        throw new PassthroughException(e);
+                    }
+                } else {
+                    throw new PassthroughException(new RuntimeException("Argument of sort function must be an array, not "+type(arg)));
+                }
+            case UnaryNode.PARSE_INT:
+                arg = get(n.child);
+                if (arg instanceof String) {
+                    String s = (String) arg;
+                    return Integer.parseInt(s);
+                } else {
+                    throw new PassthroughException(new RuntimeException("Argument of int function must be a string, not " + type(arg)));
+                }
+            case UnaryNode.PRINT:
+                arg = get(n.child);
+                String out = convertToString(arg);
+                System.out.print(out);
+                return None.INSTANCE;
+            case UnaryNode.PRINTLN:
+                arg = get(n.child);
+                String outln = convertToString(arg);
+                System.out.println(outln);
+                return None.INSTANCE;
+            case UnaryNode.NEGATION:
+                arg = get(n.child);
+                if (arg instanceof Integer) {
+                    return - (int) arg;
+                } else {
+                    throw new PassthroughException(new RuntimeException("Cannot negate a non-int value " + type(arg)));
+                }
+            case UnaryNode.NOT:
+                arg = get(n.child);
+                if (arg instanceof Boolean) {
+                    return !((boolean) arg);
+                } else {
+                    throw new PassthroughException(new RuntimeException("Cannot apply not operator on a non-boolean value " + type(arg)));
+                }
+            case UnaryNode.RETURN:
+                throw new Return(n.child == null ? None.INSTANCE : get(n.child));
+            case UnaryNode.LEN:
+                arg = get(n.child);
+                if (arg instanceof Object[]) {
+                    Object[] array = (Object[]) arg;
+                    return array.length;
+                } else if (arg instanceof HashMap) {
+                    HashMap<Object, Object> map = (HashMap<Object, Object>) arg;
+                    return map.size();
+                } else {
+                    throw new PassthroughException(new RuntimeException("Argument of len function must be an array or a map, not" +type(arg)));
+                }
+            default:
+                return null;
+        }
     }
 
     private Object binary(BinaryNode n) {
@@ -202,17 +362,43 @@ public final class Interpreter {
 
     // STATEMENTS
     private Object if_(IfNode n) {
-        /* TODO Val */
+        if (get(n.bool))
+            get(n.block);
+        else if (n.else_blocks != null) {
+            for (ElseNode elseNode : n.else_blocks) {
+                if (elseNode.bool == null) {
+                    get(elseNode.block);
+                    break;
+                } else if (get(elseNode.bool)) {
+                    get(elseNode.block);
+                    break;
+                }
+            }
+        }
         return null;
     }
 
     private Object else_(ElseNode n) {
-        /* TODO Val */
+        /* TODO Val : useless? */
         return null;
     }
 
     private Object for_(ForNode n) {
         /* TODO Val */
+        ScopeStorage oldStorage = storage;
+        Scope scope = reactor.get(n, "scope");
+        storage = new ScopeStorage(scope, storage);
+
+        Object arg = get(n.list);
+        if (!(arg instanceof Object[])) throw new PassthroughException(new RuntimeException("Cannot iterate over "+type(arg)));
+
+        Object[] array = (Object[]) arg;
+        for (Object elem : array) {
+            storage.set(scope, n.variable.value, elem);
+            get(n.block);
+        }
+
+        storage = oldStorage;
         return null;
     }
 
@@ -229,7 +415,8 @@ public final class Interpreter {
     }
 
     private Object functionCall(FunctionCallNode n) {
-        /* TODO  Gus */
+        /* TODO  Gus
+        *   une fonction sans return doit retourner None*/
         return null;
     }
 

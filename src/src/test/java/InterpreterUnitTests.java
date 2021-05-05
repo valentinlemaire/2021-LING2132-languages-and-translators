@@ -68,13 +68,16 @@ public class InterpreterUnitTests extends TestFixture {
 
         try {
             interpreter.interpret(tree);
-        } catch (PassthroughException ignored) { }
+            throw new RuntimeException("Interpretation succeeded when it was expected to fail");
+        } catch (RuntimeException ignored) { }
     }
 
 
     /*******************************************
                         TESTS
      *******************************************/
+
+    // PRIMITIVE LITERALS
 
     @Test
     public void testInteger() {
@@ -97,6 +100,133 @@ public class InterpreterUnitTests extends TestFixture {
     public void testString() {
         successExpect("\"test\"", "test");
         successExpect("\"this\nis\na\ntest\"", "this\nis\na\ntest");
+    }
+
+    // VARIABLES
+
+    @Test
+    public void testIdentifier() {
+        // TODO
+    }
+
+    @Test
+    public void testVarAssignment() {
+        // TODO
+    }
+
+    // COLLECTIONS
+
+    @Test
+    public void testMap() {
+        // TODO
+    }
+
+    @Test
+    public void testArrray() {
+        // TODO
+    }
+
+    // UNARY OPERATIONS
+
+    @Test
+    public void testRange() {
+        // TODO
+    }
+
+    @Test
+    public void testIndexer() {
+        // TODO
+    }
+
+    @Test
+    public void testSort() {
+        // TODO
+    }
+
+    @Test
+    public void testParseInt() {
+        // TODO
+    }
+
+    @Test
+    public void testPrint() {
+        // TODO
+    }
+
+    @Test
+    public void testNegation() {
+        // TODO
+    }
+
+    @Test
+    public void testNot() {
+        // TODO
+    }
+
+    @Test
+    public void testReturn() {
+        // TODO
+    }
+
+    @Test
+    public void testLen() {
+        // TODO
+    }
+
+    // BINARY OPERATIONS
+
+    @Test
+    public void testArithmeticOperation() {
+        // TODO
+    }
+
+    @Test
+    public void testLogicOperation() {
+        // TODO
+    }
+
+    @Test
+    public void testEqualityComparison() {
+        // TODO
+    }
+
+    @Test
+    public void testInequalityComparison() {
+        // TODO
+    }
+
+    @Test
+    public void testIndexAccess() {
+        // TODO
+    }
+
+    // STATEMENTS
+
+    @Test
+    public void testIf() {
+        // TODO
+    }
+
+    @Test
+    public void testFor() {
+        // TODO
+    }
+
+    @Test
+    public void testWhile() {
+        // TODO
+    }
+
+    // FUNCTIONS
+
+    @Test
+    public void testFunctionDefinition() {
+        // TODO
+    }
+
+    @Test
+    public void testFunctionCall() {
+        // TODO
     }
 
 }

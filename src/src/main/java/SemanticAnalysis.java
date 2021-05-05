@@ -449,6 +449,18 @@ public final class SemanticAnalysis {
     }
 
     public void if_(IfNode node) {
+        if (node.else_blocks != null) {
+            R.rule()
+                    .by(r -> {
+                        for (int i = 0; i < node.else_blocks.size() - 1; i++) {
+                            if (node.else_blocks.get(i).bool == null) {
+                                r.errorFor("Cannot have elsif or else blocks after an else block", node);
+                            }
+                        }
+                    });
+        }
+
+
         R.rule()
                 .using(node.bool, "type")
                 .by(r -> {

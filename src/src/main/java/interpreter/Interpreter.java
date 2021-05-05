@@ -1,9 +1,7 @@
 package interpreter;
 
-import Types.Type;
 import ast.*;
 import norswap.uranium.Reactor;
-import norswap.utils.Util;
 import norswap.utils.exceptions.Exceptions;
 import norswap.utils.exceptions.NoStackException;
 import norswap.utils.visitors.ValuedVisitor;
@@ -15,8 +13,6 @@ import scopes.SyntheticDeclarationNode;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -116,7 +112,7 @@ public final class Interpreter {
         else if (arg instanceof FunctionDefinitionNode)
             return ((FunctionDefinitionNode) arg).name.value;
         else if (arg instanceof HashMap)
-            return "{"+((HashMap<?, ?>) arg).entrySet().stream().map((e) -> convertToString(e.getKey()) + ": " + convertToString(e.getValue())).collect(Collectors.joining(", ")) + "}";
+            return "{"+((HashMap<?, ?>) arg).entrySet().stream().map((e) -> convertToString(e.getKey()) + ":" + convertToString(e.getValue())).collect(Collectors.joining(", ")) + "}";
         else
             return arg.toString();
     }
@@ -140,14 +136,18 @@ public final class Interpreter {
         storage.initRoot(rootScope);
 
         try {
-            n.block.statements.forEach(this::run);
+            Object res = null;
+            for (ASTNode statement : n.block.statements) {
+                res = get(statement);
+            }
+            return res;
         } catch (Return r) {
+            // TODO: claqué
             return r.value;
             // allow returning from the main script
         } finally {
             storage = null;
         }
-        return null;
     }
 
     private Object block(BlockNode n) {
@@ -536,7 +536,6 @@ public final class Interpreter {
     }
 
     private Object for_(ForNode n) {
-        /* TODO Val */
         ScopeStorage oldStorage = storage;
         Scope scope = reactor.get(n, "scope");
         storage = new ScopeStorage(scope, storage);

@@ -12,6 +12,7 @@ import scopes.RootScope;
 import scopes.Scope;
 import scopes.SyntheticDeclarationNode;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -279,6 +280,8 @@ public final class Interpreter {
                 } else {
                     throw new PassthroughException(new RuntimeException("Argument of range function must be an integer, not " + type(arg)));
                 }
+
+
             case UnaryNode.INDEXER:
                 arg = get(n.child);
                 if (arg instanceof Object[]) {
@@ -355,21 +358,171 @@ public final class Interpreter {
     }
 
     private Object binary(BinaryNode n) {
-        /* TODO Gus */
+        Object arg;
+        if (n.isArithmeticOperation()) {
+            return arithmeticOperation(n);
+        } else if (n.isLogicOperation()) {
+            return logicOperation(n);
+        } else if (n.isEqualityComparison()) {
+            return equalityComparison(n);
+        } else if (n.isInequalityComparison()) {
+            return inequalityComparison(n);
+        } else if (n.isPair()) {
+            return pair(n);
+        } else if (n.isIdxAccess()) {
+            return idxAccess(n);
+        }
+        throw new Error("Should not get here");
+    }
+
+    private Object arithmeticOperation(BinaryNode n) {
+        Object leftObject  = get(n.left);
+        Object rightObject = get(n.left);
+
+        if (!(leftObject instanceof Integer && rightObject instanceof Integer)) {
+            throw new PassthroughException(new ClassCastException("Cannot do arithmetic operations on "
+                                                                 + type(leftObject) + " and "
+                                                                 + type(rightObject) + "."));
+        }
+
+        Integer left  = (Integer) leftObject;
+        Integer right = (Integer) rightObject;
+
+        switch (n.code) {
+            case BinaryNode.ADD:
+                return left + right;
+            case BinaryNode.SUB:
+                return left - right;
+            case BinaryNode.MUL:
+                return left * right;
+            case BinaryNode.DIV:
+                return left / right;
+            case BinaryNode.MOD:
+                return left % right;
+        }
+
+        throw new Error("Should not get here");
+    }
+
+    private Object logicOperation(BinaryNode n) {
+        Object leftObject  = get(n.left);
+        Object rightObject = get(n.left);
+
+        if (!(leftObject instanceof Boolean && rightObject instanceof Boolean)) {
+            throw new PassthroughException(new ClassCastException("Cannot do logic operations on "
+                                                                 + type(leftObject) + " and "
+                                                                 + type(rightObject) + "."));
+        }
+
+        Boolean left  = (Boolean) leftObject;
+        Boolean right = (Boolean) rightObject;
+
+        switch (n.code) {
+            case BinaryNode.OR:
+                return left || right;
+            case BinaryNode.AND:
+                return left && right;
+        }
+
+        throw new Error("Should not get here");
+    }
+
+    private Object equalityComparison(BinaryNode n) {
+        switch (n.code) {
+            case BinaryNode.EQ:
+                return get(n.left).equals(get(n.right));
+            case BinaryNode.NEQ:
+                return !get(n.left).equals(get(n.right));
+        }
+
+        throw new Error("Should not get here");
+    }
+
+    private Object inequalityComparison(BinaryNode n) {
+        Object leftObject  = get(n.left);
+        Object rightObject = get(n.left);
+
+        int comparison;
+
+        if (leftObject instanceof Integer && rightObject instanceof Integer) {
+            Integer left  = (Integer) leftObject;
+            Integer right = (Integer) rightObject;
+
+            comparison = left.compareTo(right);
+
+        } else if (leftObject instanceof String && rightObject instanceof String) {
+            String left  = (String) leftObject;
+            String right = (String) rightObject;
+
+            comparison = left.compareTo(right);
+
+        } else {
+            throw new PassthroughException(new ClassCastException("Cannot do inequality comparisons on "
+                    + type(leftObject) + " and "
+                    + type(rightObject) + "."));
+        }
+
+        switch (n.code) {
+            case BinaryNode.LEQ:
+                return comparison <= 0;
+            case BinaryNode.GEQ:
+                return comparison >= 0;
+            case BinaryNode.L:
+                return comparison < 0;
+            case BinaryNode.G:
+                return comparison > 0;
+        }
+
+        throw new Error("Should not get here");
+    }
+
+    private Object pair(BinaryNode n) {
+        throw new Error("Should not get here");
+    }
+
+    private Object idxAccess(BinaryNode n) {
+        Object leftObject  = get(n.left);
+        Object rightObject = get(n.right);
+
+        if (leftObject instanceof Object[] && rightObject instanceof Integer) {
+            Object[] list = (Object[]) leftObject;
+            Integer idx = (Integer) rightObject;
+
+            return list[idx];
+        } else if (leftObject instanceof HashMap) {
+            HashMap<Object, Object> map = (HashMap<Object, Object>) leftObject;
+            /* todo use isprimitive() to check type of keys */
+            /* todo raise passthrough exception if invalid key */
+            /* TODO ?? indexing with strings won't work since Object.compareTo will compare references */
+        }
         return null;
+        /*TODO GUS*/
     }
 
 
     // STATEMENTS
     private Object if_(IfNode n) {
+        Object arg = get(n.bool);
+
+        if (!(arg instanceof Boolean))
+            throw new PassthroughException(new RuntimeException("If statement needs boolean condition, not " + type(arg)));
+
         if (get(n.bool))
             get(n.block);
+
         else if (n.else_blocks != null) {
             for (ElseNode elseNode : n.else_blocks) {
                 if (elseNode.bool == null) {
                     get(elseNode.block);
                     break;
-                } else if (get(elseNode.bool)) {
+                }
+
+                arg = get(n.bool);
+
+                if (!(arg instanceof Boolean))
+                    throw new PassthroughException(new RuntimeException("Elsif statement needs boolean condition, not " + type(arg)));
+
+                if (get(elseNode.bool)) {
                     get(elseNode.block);
                     break;
                 }
@@ -379,8 +532,7 @@ public final class Interpreter {
     }
 
     private Object else_(ElseNode n) {
-        /* TODO Val : useless? */
-        return null;
+        throw new Error("Should not get here");
     }
 
     private Object for_(ForNode n) {
@@ -403,7 +555,19 @@ public final class Interpreter {
     }
 
     private Object while_(WhileNode n) {
-        /* TODO Gus */
+        ScopeStorage oldStorage = storage;
+        Scope scope = reactor.get(n, "scope");
+        storage = new ScopeStorage(scope, storage);
+
+        Object arg = get(n.bool);
+        if (!(arg instanceof Boolean))
+            throw new PassthroughException(new RuntimeException("While loop needs boolean condition, not " + type(arg)));
+
+        while (get(n.bool)) {
+            get(n.block);
+        }
+
+        storage = oldStorage;
         return null;
     }
 

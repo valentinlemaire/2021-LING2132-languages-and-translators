@@ -1,3 +1,5 @@
+import Types.PolymorphArray;
+import Types.PolymorphMap;
 import ast.ASTNode;
 import interpreter.Interpreter;
 import interpreter.None;
@@ -8,14 +10,16 @@ import norswap.utils.visitors.Walker;
 import norswap.uranium.Reactor;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
 
 import static norswap.utils.Util.cast;
 
 
 public class InterpreterUnitTests extends TestFixture {
 
-    private String input;
     private ASTNode tree;
     private Reactor reactor;
     private Interpreter interpreter;
@@ -39,7 +43,6 @@ public class InterpreterUnitTests extends TestFixture {
     }
 
     protected Object parse (String input) {
-        this.input = input;
         return autumnFixture.success(input).topValue();
     }
 
@@ -82,12 +85,14 @@ public class InterpreterUnitTests extends TestFixture {
     @Test
     public void testInteger() {
         successExpect("1", 1);
+
         successExpect("124", 124);
     }
 
     @Test
     public void testBool() {
         successExpect("True", true);
+
         successExpect("False", false);
     }
 
@@ -99,78 +104,197 @@ public class InterpreterUnitTests extends TestFixture {
     @Test
     public void testString() {
         successExpect("\"test\"", "test");
+
         successExpect("\"this\nis\na\ntest\"", "this\nis\na\ntest");
     }
 
     // VARIABLES
 
     @Test
-    public void testIdentifier() {
-        // TODO
-    }
+    public void testVariables() {
+        successExpect("a = 1\na", 1);
 
-    @Test
-    public void testVarAssignment() {
-        // TODO
+        successExpect("a = \"yo\"\na", "yo");
+
+        successExpect("a = None\na", None.INSTANCE);
+
+        successExpect("a = True\na", true);
     }
 
     // COLLECTIONS
 
     @Test
     public void testMap() {
-        // TODO
+        PolymorphMap map = new PolymorphMap();
+        map.put(1, "yo");
+        map.put("test", 3);
+        map.put(false, None.INSTANCE);
+        successExpect("{1:\"yo\", \"test\":3, False:None}", map);
+
+        PolymorphMap map2 = new PolymorphMap();
+        map2.put(1, "yo");
+        map2.put(true, map);
+        map2.put("this is getting complicated", new PolymorphArray(1, None.INSTANCE, false));
+
+        successExpect("{1: \"yo\", True: {1:\"yo\", \"test\":3, False:None}, \"this is getting complicated\": [1, None, False]}", map2);
+
+
+        failure("{None:2}");
+
+        failure("{{3:5}:2}");
+
     }
 
     @Test
-    public void testArrray() {
-        // TODO
+    public void testArray() {
+        successExpect("[None, 1, \"yo\", False]", new PolymorphArray(None.INSTANCE, 1, "yo", false));
+
+        successExpect("[:4]", new PolymorphArray(None.INSTANCE, None.INSTANCE, None.INSTANCE, None.INSTANCE));
+
+        /* TODO : uncomment when functions implemented
+        failure("def f(x):\n" +
+                      "  return None\n" +
+                      "end\n" +
+                      "[:f(1)]");
+        */
     }
 
     // UNARY OPERATIONS
 
     @Test
     public void testRange() {
-        // TODO
+        successExpect("range(3)", new PolymorphArray(0, 1, 2));
+
+        successExpect("a = 5\n" +
+                            "range(a)", new PolymorphArray(0, 1, 2, 3, 4));
+
+        /* TODO : uncomment when functions implemented
+        failure("def f(x):\n" +
+                      "  return None\n" +
+                      "end\n" +
+                      "range(f(1))");
+        */
     }
 
     @Test
     public void testIndexer() {
-        // TODO
+        successExpect("a = {1: 3, \"yo\":None}\n" +
+                            "indexer(a)", new PolymorphArray(1, "yo"));
+
+        successExpect("a = [1, 2, 3]\n" +
+                            "indexer(a)", new PolymorphArray(0, 1, 2));
+
+        /* TODO : uncomment when functions implemented
+        failure("def f(x):\n" +
+                      "  return None\n" +
+                      "end\n" +
+                      "indexer(f(1))");
+        */
     }
 
     @Test
     public void testSort() {
-        // TODO
+        successExpect("a = [2, 5, 3]\n" +
+                            "sort(a)", new PolymorphArray(2, 3, 5));
+
+        successExpect("a = [\"a\", \"c\", \"b\"]\n" +
+                            "sort(a)", new PolymorphArray("a", "b", "c"));
+
+        failure("a = [1, \"yo\"]\n" +
+                      "sort(a)");
     }
 
     @Test
     public void testParseInt() {
-        // TODO
+        successExpect("int(\"2\")", 2);
+
+        successExpect("int(\"-2\")", -2);
+
+        /* TODO : uncomment when functions implemented
+        failure("def f(x):\n" +
+                      "  return None\n" +
+                      "end\n" +
+                      "int(f(1))");
+        */
     }
 
     @Test
     public void testPrint() {
-        // TODO
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+
+        successExpect("print(\"test\")", None.INSTANCE);
+        String expected = "test";
+
+        successExpect("println(\"test\")", None.INSTANCE);
+        expected += "test\n";
+
+        successExpect("println(1)", None.INSTANCE);
+        expected += "1\n";
+
+        successExpect("println({1:3, True:None, \"yo\": [1, None, False]})", None.INSTANCE);
+        expected += "{1: 3, \"yo\": [1, None, False], True: None}\n";
+
+        successExpect("println({1:{2: None, 3: 5}, True:None})", None.INSTANCE);
+        expected += "{1: {2: None, 3: 5}, True: None}\n";
+        assertEquals(expected, outContent.toString());
+
     }
 
     @Test
     public void testNegation() {
-        // TODO
+        successExpect("a = 5\n" +
+                            "b = -a\n" +
+                            "b", -5);
+
+        successExpect("a = -10\n" +
+                            "b = -a + 1\n" +
+                            "b", 11);
+
+        /* TODO : uncomment when functions implemented
+        failure("def f(x):\n" +
+                      "  return None\n" +
+                      "end\n" +
+                      "b = -f(1)\n" +
+                      "b");
+        */
+
     }
 
     @Test
     public void testNot() {
-        // TODO
+        successExpect("a = True\n" +
+                "b = not a\n" +
+                "b", false);
+
+        successExpect("a = False\n" +
+                "b = not a\n" +
+                "b", true);
+
+        /* TODO : uncomment when functions implemented
+        failure("def f(x):\n" +
+                      "  return None\n" +
+                      "end\n" +
+                      "b = not f(1)\n" +
+                      "b");
+        */
     }
 
     @Test
     public void testReturn() {
-        // TODO
+        // TODO when functions are implemented
     }
 
     @Test
     public void testLen() {
-        // TODO
+        successExpect("len([1, 2, 3])", 3);
+        successExpect("len({1: 2, 3: None})", 2);
+        /* TODO : uncomment when functions implemented
+        failure("def f(x):\n" +
+                "  return None\n" +
+                "end\n" +
+                "len(f(1))");
+        */
     }
 
     // BINARY OPERATIONS
@@ -204,12 +328,76 @@ public class InterpreterUnitTests extends TestFixture {
 
     @Test
     public void testIf() {
-        // TODO
+        successExpect("a = 0\n" +
+                            "if True:\n" +
+                            "  a = 1\n" +
+                            "else:\n" +
+                            "  a = 2\n" +
+                            "end\n" +
+                            "a", 1);
+
+        successExpect("a = 0\n" +
+                            "if not True:\n" +
+                            "  a = 1\n" +
+                            "elsif True:\n" +
+                            "  a = 2\n" +
+                            "else:\n" +
+                            "  a = 3\n" +
+                            "end\n" +
+                            "a", 2);
+
+        successExpect("a = True\n" +
+                            "if not a:\n" +
+                            "  a = 1\n" +
+                            "elsif a:\n" +
+                            "  a = \"yo\"\n" +
+                            "else:\n" +
+                            "  a = {2: False}\n" +
+                            "end\n" +
+                            "a", "yo");
+
+        /* TODO : uncomment when functions implemented
+        failure("def f(x):\n" +
+                "  return None\n" +
+                "end\n" +
+                "if not f(1):\n" +
+                "  a = 1\n" +
+                "else:\n" +
+                "  a = {2: False}\n" +
+                "end\n");
+        */
     }
 
     @Test
     public void testFor() {
-        // TODO
+        successExpect("b = 1\n" +
+                            "for a in [{1:2, 3:4}, \"yo\", 2]:\n" +
+                            "  b = a\n" +
+                            "end\n" +
+                            "b", 2);
+
+        successExpect("b = 1\n" +
+                            "for a in range(3):\n" +
+                            "  b = a\n" +
+                            "end\n" +
+                            "b", 2);
+
+        successExpect("b = 1\n" +
+                            "for a in indexer({\"yo\":2, 3:4}):\n" +
+                            "  b = a\n" +
+                            "end\n" +
+                            "b", "yo");
+
+        /* TODO : uncomment when functions implemented
+        failure("def f(x):\n" +
+                "  return None\n" +
+                "end\n" +
+                "b = 1\n" +
+                "for a in f(1):\n" +
+                "  b = a\n" +
+                "end\n" +
+                "b");
+        */
     }
 
     @Test

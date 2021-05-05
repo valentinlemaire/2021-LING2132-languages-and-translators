@@ -1,5 +1,7 @@
 package interpreter;
 
+import Types.PolymorphArray;
+import Types.PolymorphMap;
 import ast.*;
 import norswap.uranium.Reactor;
 import norswap.utils.exceptions.Exceptions;
@@ -10,14 +12,11 @@ import scopes.RootScope;
 import scopes.Scope;
 import scopes.SyntheticDeclarationNode;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static norswap.utils.Util.cast;
-import static norswap.utils.Vanilla.coIterate;
 import static norswap.utils.Vanilla.map;
 
 
@@ -104,25 +103,33 @@ public final class Interpreter {
         return o instanceof String || o instanceof Integer || o instanceof Boolean;
     }
 
-    private String convertToString (Object arg) {
+    public static String convertToString(Object arg) {
         if (arg == None.INSTANCE)
             return "None";
-        else if (arg instanceof Object[])
-            return Arrays.deepToString((Object[]) arg);
+        else if (arg instanceof PolymorphArray)
+            return ((PolymorphArray) arg).toString();
         else if (arg instanceof FunctionDefinitionNode)
             return ((FunctionDefinitionNode) arg).name.value;
-        else if (arg instanceof HashMap)
-            return "{"+((HashMap<?, ?>) arg).entrySet().stream().map((e) -> convertToString(e.getKey()) + ":" + convertToString(e.getValue())).collect(Collectors.joining(", ")) + "}";
+        else if (arg instanceof PolymorphMap)
+            return ((PolymorphMap) arg).toString();
+        else if (arg instanceof Boolean)
+            return (boolean) arg ? "True" : "False";
         else
             return arg.toString();
+    }
+
+    public static String recConvertToString(Object arg) {
+        if (arg instanceof String)
+            return "\"" + arg + "\"";
+        return convertToString(arg);
     }
 
     private String type(Object arg) {
         if (arg instanceof Integer)  return "int";
         if (arg instanceof Boolean)  return "bool";
         if (arg instanceof String)   return "string";
-        if (arg instanceof Object[]) return "array";
-        if (arg instanceof HashMap)  return "map";
+        if (arg instanceof PolymorphArray) return "array";
+        if (arg instanceof PolymorphMap)  return "map";
         return "unknown type";
     }
 
@@ -136,11 +143,7 @@ public final class Interpreter {
         storage.initRoot(rootScope);
 
         try {
-            Object res = null;
-            for (ASTNode statement : n.block.statements) {
-                res = get(statement);
-            }
-            return res;
+            return get(n.block);
         } catch (Return r) {
             // TODO: claqué
             return r.value;
@@ -153,9 +156,12 @@ public final class Interpreter {
     private Object block(BlockNode n) {
         Scope scope = reactor.get(n, "scope");
         storage = new ScopeStorage(scope, storage);
-        n.statements.forEach(this::run);
+        Object res = null;
+        for (ASTNode statement : n.statements) {
+            res = get(statement);
+        }
         storage = storage.parent;
-        return null;
+        return res;
     }
 
 
@@ -184,6 +190,7 @@ public final class Interpreter {
 
         if (decl instanceof VarAssignmentNode
                 || decl instanceof ParameterNode
+                || decl instanceof ForNode
                 || decl instanceof SyntheticDeclarationNode
                 && ((SyntheticDeclarationNode) decl).kind() == DeclarationKind.VARIABLE)
             return scope == rootScope
@@ -207,17 +214,17 @@ public final class Interpreter {
             Object indexable = get(arrayAccess.left);
             if (indexable == None.INSTANCE) {
                 throw new PassthroughException(new NullPointerException("Indexing null array " + n.left));
-            } else if (indexable instanceof Object[]) {
-                Object[] array = (Object[]) indexable;
+            } else if (indexable instanceof PolymorphArray) {
+                PolymorphArray array = (PolymorphArray) indexable;
                 int index = getIndex(arrayAccess.right);
                 try {
-                    array[index] = get(n.right);
+                    array.set(index, get(n.right));
                     return null;
                 } catch (ArrayIndexOutOfBoundsException e) {
                     throw new PassthroughException(e);
                 }
-            } else if (indexable instanceof HashMap) {
-                HashMap<Object, Object> map = (HashMap<Object, Object>) indexable;
+            } else if (indexable instanceof PolymorphMap) {
+                PolymorphMap map = (PolymorphMap) indexable;
                 Object indexer = get(arrayAccess.right);
                 if (isPrimitive(indexer)) {
                     map.put(indexer, get(n.right));
@@ -245,7 +252,7 @@ public final class Interpreter {
 
     // COLLECTIONS
     private Object map_(MapNode n) {
-        HashMap<Object, Object> dictionary = new HashMap<>();
+        PolymorphMap dictionary = new PolymorphMap();
         if (n.elements != null) {
             for (BinaryNode pair : n.elements) {
                 if (isPrimitive(get(pair.left))) {
@@ -260,9 +267,13 @@ public final class Interpreter {
 
     private Object array(ArrayNode n) {
         if (n.elements != null) {
-            return map(n.elements, new Object[0], visitor);
+            return new PolymorphArray(map(n.elements, new Object[0], visitor));
         } else if (n.size != null) {
-            return new Object[(int) get(n.size)];
+            Object arg = get(n.size);
+            if (!(arg instanceof Integer))
+                throw new PassthroughException(new RuntimeException("Lists with size argument must be declared with an int not "+type(arg)));
+
+            return new PolymorphArray(IntStream.range(0, (int) arg).mapToObj((x) -> None.INSTANCE).toArray());
         }
 
         throw new Error("should not reach here");
@@ -276,7 +287,7 @@ public final class Interpreter {
             case UnaryNode.RANGE:
                 arg = get(n.child);
                 if (arg instanceof Integer) {
-                    return IntStream.range(0, (int) arg - 1).toArray();
+                    return new PolymorphArray(IntStream.range(0, (int) arg).boxed().toArray());
                 } else {
                     throw new PassthroughException(new RuntimeException("Argument of range function must be an integer, not " + type(arg)));
                 }
@@ -284,22 +295,22 @@ public final class Interpreter {
 
             case UnaryNode.INDEXER:
                 arg = get(n.child);
-                if (arg instanceof Object[]) {
-                    Object[] array = (Object[]) arg;
-                    return IntStream.range(0, array.length - 1).toArray();
-                } else if (arg instanceof HashMap) {
-                    HashMap<Object, Object> map = (HashMap<Object, Object>) arg;
-                    return map.keySet().toArray();
+                if (arg instanceof PolymorphArray) {
+                    PolymorphArray array = (PolymorphArray) arg;
+                    return new PolymorphArray(IntStream.range(0, array.size()).boxed().toArray());
+                } else if (arg instanceof PolymorphMap) {
+                    PolymorphMap map = (PolymorphMap) arg;
+                    return new PolymorphArray(map.keys());
                 } else {
                     throw new PassthroughException(new RuntimeException("Argument of range function must be a map or an array, not " + type(arg)));
                 }
             case UnaryNode.SORT:
                 arg = get(n.child);
-                if (arg instanceof Object[]) {
-                    Object[] original = (Object[]) arg;
-                    Object[] copy = original.clone();
+                if (arg instanceof PolymorphArray) {
+                    PolymorphArray original = (PolymorphArray) arg;
+                    PolymorphArray copy = original.clone();
                     try {
-                        Arrays.sort(copy);
+                        copy.sort();
                         return copy;
                     } catch (ClassCastException e) {
                         throw new PassthroughException(e);
@@ -343,11 +354,11 @@ public final class Interpreter {
                 throw new Return(n.child == null ? None.INSTANCE : get(n.child));
             case UnaryNode.LEN:
                 arg = get(n.child);
-                if (arg instanceof Object[]) {
-                    Object[] array = (Object[]) arg;
-                    return array.length;
-                } else if (arg instanceof HashMap) {
-                    HashMap<Object, Object> map = (HashMap<Object, Object>) arg;
+                if (arg instanceof PolymorphArray) {
+                    PolymorphArray array = (PolymorphArray) arg;
+                    return array.size();
+                } else if (arg instanceof PolymorphMap) {
+                    PolymorphMap map = (PolymorphMap) arg;
                     return map.size();
                 } else {
                     throw new PassthroughException(new RuntimeException("Argument of len function must be an array or a map, not" +type(arg)));
@@ -377,7 +388,7 @@ public final class Interpreter {
 
     private Object arithmeticOperation(BinaryNode n) {
         Object leftObject  = get(n.left);
-        Object rightObject = get(n.left);
+        Object rightObject = get(n.right);
 
         if (!(leftObject instanceof Integer && rightObject instanceof Integer)) {
             throw new PassthroughException(new ClassCastException("Cannot do arithmetic operations on "
@@ -484,13 +495,16 @@ public final class Interpreter {
         Object leftObject  = get(n.left);
         Object rightObject = get(n.right);
 
-        if (leftObject instanceof Object[] && rightObject instanceof Integer) {
-            Object[] list = (Object[]) leftObject;
+        if (leftObject instanceof PolymorphArray && rightObject instanceof Integer) {
+            PolymorphArray list = (PolymorphArray) leftObject;
             Integer idx = (Integer) rightObject;
-
-            return list[idx];
-        } else if (leftObject instanceof HashMap) {
-            HashMap<Object, Object> map = (HashMap<Object, Object>) leftObject;
+            try {
+                return list.get(idx);
+            } catch (ArrayIndexOutOfBoundsException e) {
+                throw new PassthroughException(e);
+            }
+        } else if (leftObject instanceof PolymorphMap) {
+            PolymorphMap map = (PolymorphMap) leftObject;
             /* todo use isprimitive() to check type of keys */
             /* todo raise passthrough exception if invalid key */
             /* TODO ?? indexing with strings won't work since Object.compareTo will compare references */
@@ -541,9 +555,9 @@ public final class Interpreter {
         storage = new ScopeStorage(scope, storage);
 
         Object arg = get(n.list);
-        if (!(arg instanceof Object[])) throw new PassthroughException(new RuntimeException("Cannot iterate over "+type(arg)));
+        if (!(arg instanceof PolymorphArray)) throw new PassthroughException(new RuntimeException("Cannot iterate over "+type(arg)));
 
-        Object[] array = (Object[]) arg;
+        PolymorphArray array = (PolymorphArray) arg;
         for (Object elem : array) {
             storage.set(scope, n.variable.value, elem);
             get(n.block);

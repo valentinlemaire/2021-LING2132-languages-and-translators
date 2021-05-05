@@ -81,19 +81,14 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput("[1, 2, 3]");
         successInput("[\"Hello\", \" \", \"World\"]");
         successInput("a = [:3]");
-        failureAt(
+        success(
                 new RootNode(new BlockNode(Arrays.asList(
                         new ArrayNode(Arrays.asList(
                                 new IntegerNode(1),
                                 new IntegerNode(2),
                                 new StringNode("3")
                         ))
-                ))),
-                new ArrayNode(Arrays.asList(
-                        new IntegerNode(1),
-                        new IntegerNode(2),
-                        new StringNode("3")
-                )));
+                ))));
         failureAt(
                 new RootNode(new BlockNode(Arrays.asList(
                         new ArrayNode(new StringNode("Hello"))
@@ -107,17 +102,14 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput("x = 1\n"     +
                      "y = \"b\"\n" +
                      "myMap = {x : \"a\", 2 : y    , 3 : \"c\"}");
-        failureAt(
+        success(
                 new RootNode(new BlockNode(Arrays.asList(
                         new MapNode(Arrays.asList(
                                 new BinaryNode(new IntegerNode(1), new StringNode("Hello"), BinaryNode.PAIR),
                                 new BinaryNode(new IntegerNode(2), new IntegerNode(3),      BinaryNode.PAIR)
                         ))
-                ))),
-                new MapNode(Arrays.asList(
-                        new BinaryNode(new IntegerNode(1), new StringNode("Hello"), BinaryNode.PAIR),
-                        new BinaryNode(new IntegerNode(2), new IntegerNode(3),      BinaryNode.PAIR)
-                )));
+                ))));
+
     }
 
     @Test

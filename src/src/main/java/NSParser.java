@@ -131,16 +131,16 @@ public final class NSParser extends Grammar {
 
     // Addition and Subtraction
     public rule addition = lazy(() -> left_expression()
-            .operand(choice(multiplication, this.numerical_negation))
+            .operand(choice(this.numerical_negation, multiplication))
             .infix(ADD, $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.ADD))
             .infix(SUB, $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.SUB)));
 
     // Negation
-    public rule numerical_negation = seq(SUB, multiplication)
+    public rule numerical_negation = lazy(() -> seq(SUB, multiplication))
             .push($ -> new UnaryNode($.$0(), UnaryNode.NEGATION));
 
     // Basic operands without operations or parenthesis
-    public rule primary_numerical_operator = choice(addition, numerical_negation);
+    public rule primary_numerical_operator = choice(addition);
 
     // Handling of parenthesis
     public rule paren_primary_numerical_operator = lazy(() -> seq(LPAREN, this.numerical_operation, RPAREN));

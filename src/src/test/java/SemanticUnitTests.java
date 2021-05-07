@@ -371,6 +371,8 @@ public class SemanticUnitTests extends UraniumTestFixture {
     @Test
     public void testLogicOperation() {
         successInput("True and False");
+        successInput("False and False");
+        successInput("True and True");
         successInput("a = True\n" +
                      "a or True");
 

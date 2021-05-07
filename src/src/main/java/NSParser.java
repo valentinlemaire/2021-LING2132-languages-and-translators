@@ -29,9 +29,9 @@ public final class NSParser extends Grammar {
 
     // Lexer
 
-    public rule TRUE    = reserved("True").as_val(new BoolNode(true));
-    public rule FALSE   = reserved("False").as_val(new BoolNode(false));
-    public rule NONE    = reserved("None").as_val(new NoneNode());
+    public rule TRUE    = reserved("True").push($ -> new BoolNode(true));
+    public rule FALSE   = reserved("False").push($ -> new BoolNode(false));
+    public rule NONE    = reserved("None").push($ -> new NoneNode());
 
     public rule FOR      = reserved("for");
     public rule IN       = reserved("in");
@@ -304,7 +304,7 @@ public final class NSParser extends Grammar {
     public ParseResult parse (String input) {
         ParseResult result = Autumn.parse(root, input, ParseOptions.get());
         if (result.fullMatch) {
-            System.out.println(result.toString());
+            System.out.println(result);
         } else {
             // debugging
             System.out.println(result.toString(new LineMapString("name", input), false));

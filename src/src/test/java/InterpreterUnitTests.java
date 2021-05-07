@@ -151,12 +151,10 @@ public class InterpreterUnitTests extends TestFixture {
 
         successExpect("[:4]", new PolymorphArray(None.INSTANCE, None.INSTANCE, None.INSTANCE, None.INSTANCE));
 
-        /* TODO : uncomment when functions implemented
         failure("def f(x):\n" +
                       "  return None\n" +
                       "end\n" +
                       "[:f(1)]");
-        */
     }
 
     // UNARY OPERATIONS
@@ -168,12 +166,10 @@ public class InterpreterUnitTests extends TestFixture {
         successExpect("a = 5\n" +
                             "range(a)", new PolymorphArray(0, 1, 2, 3, 4));
 
-        /* TODO : uncomment when functions implemented
         failure("def f(x):\n" +
                       "  return None\n" +
                       "end\n" +
                       "range(f(1))");
-        */
     }
 
     @Test
@@ -184,12 +180,10 @@ public class InterpreterUnitTests extends TestFixture {
         successExpect("a = [1, 2, 3]\n" +
                             "indexer(a)", new PolymorphArray(0, 1, 2));
 
-        /* TODO : uncomment when functions implemented
         failure("def f(x):\n" +
                       "  return None\n" +
                       "end\n" +
                       "indexer(f(1))");
-        */
     }
 
     @Test
@@ -210,12 +204,10 @@ public class InterpreterUnitTests extends TestFixture {
 
         successExpect("int(\"-2\")", -2);
 
-        /* TODO : uncomment when functions implemented
         failure("def f(x):\n" +
                       "  return None\n" +
                       "end\n" +
                       "int(f(1))");
-        */
     }
 
     @Test
@@ -251,14 +243,11 @@ public class InterpreterUnitTests extends TestFixture {
                             "b = -a + 1\n" +
                             "b", 11);
 
-        /* TODO : uncomment when functions implemented
         failure("def f(x):\n" +
                       "  return None\n" +
                       "end\n" +
                       "b = -f(1)\n" +
                       "b");
-        */
-
     }
 
     @Test
@@ -271,13 +260,11 @@ public class InterpreterUnitTests extends TestFixture {
                 "b = not a\n" +
                 "b", true);
 
-        /* TODO : uncomment when functions implemented
         failure("def f(x):\n" +
                       "  return None\n" +
                       "end\n" +
                       "b = not f(1)\n" +
                       "b");
-        */
     }
 
     @Test
@@ -289,39 +276,217 @@ public class InterpreterUnitTests extends TestFixture {
     public void testLen() {
         successExpect("len([1, 2, 3])", 3);
         successExpect("len({1: 2, 3: None})", 2);
-        /* TODO : uncomment when functions implemented
         failure("def f(x):\n" +
                 "  return None\n" +
                 "end\n" +
                 "len(f(1))");
-        */
     }
 
     // BINARY OPERATIONS
 
     @Test
     public void testArithmeticOperation() {
-        // TODO
+        // basic operations
+        successExpect("5+2", 7);
+        successExpect("5-2", 3);
+        successExpect("5*2", 10);
+        successExpect("5/2", 2);
+        successExpect("5%2", 1);
+
+        // with variables
+        successExpect("a = 5\n" +
+                "a+2", 7);
+        successExpect("a = 5\n" +
+                "a-2", 3);
+        successExpect("a = 5\n" +
+                "a*2", 10);
+        successExpect("a = 5\n" +
+                "a/2", 2);
+        successExpect("a = 5\n" +
+                "a%2", 1);
+
+        // with invalid return values in functions
+        failure("def f(x):\n" +
+                "  return None\n" +
+                "end\n" +
+                "f(1)+2");
+        failure("def f(x):\n" +
+                "  return True\n" +
+                "end\n" +
+                "f(1)-2");
+        failure("def f(x):\n" +
+                "  return \"hello world\"\n" +
+                "end\n" +
+                "f(1)*2");
+        failure("def f(x):\n" +
+                "  return False\n" +
+                "end\n" +
+                "f(1)/2");
+        failure("def f(x):\n" +
+                "  return [1, 2, 3]\n" +
+                "end\n" +
+                "f(1)%2");
     }
 
     @Test
     public void testLogicOperation() {
-        // TODO
+        // basic operations
+        successExpect("True and True", true);
+        successExpect("True and False", false);
+        successExpect("False or True", true);
+        successExpect("False or False", false);
+
+        // with variables
+        successExpect("a = False\n" +
+                "a and True", false);
+        successExpect("a = False\n" +
+                "a and False", false);
+        successExpect("a = True\n" +
+                "a or False", true);
+        successExpect("a = True\n" +
+                "a or True", true);
+
+        // with invalid return values in functions
+        failure("def f(x):\n" +
+                "  return None\n" +
+                "end\n" +
+                "f(1) and True");
+        failure("def f(x):\n" +
+                "  return 3\n" +
+                "end\n" +
+                "f(1) or True");
+        failure("def f(x):\n" +
+                "  return \"hello world\"\n" +
+                "end\n" +
+                "f(1) and True");
+        failure("def f(x):\n" +
+                "  return {1 : 2}\n" +
+                "end\n" +
+                "f(1) or True");
+        failure("def f(x):\n" +
+                "  return [1, 2, 3]\n" +
+                "end\n" +
+                "f(1) and False");
+
+        // functions working
+        successExpect("def f(x):\n" +
+                "  return True\n" +
+                "end\n" +
+                "f(1) and False", false);
+        successExpect("def f(x):\n" +
+                "  return {\"hello\" : True}\n" +
+                "end\n" +
+                "f(1)[\"hello\"] or False", true);
+        successExpect("def f(x):\n" +
+                "  return {False : True}\n" +
+                "end\n" +
+                "f(1)[False] or False", true);
+        successExpect("def f(x):\n" +
+                "  return [True, False, 2, 3]\n" +
+                "end\n" +
+                "f(1)[1] or False", false);
     }
 
     @Test
     public void testEqualityComparison() {
-        // TODO
+        successExpect("True == True", true);
+        successExpect("3 == 3", true);
+        successExpect("2 == 3", false);
+        successExpect("3 != 2", true);
+        successExpect("\"hello\" == \"hello\"", true);
+        successExpect("\"hello\" != \"world\"", true);
+        successExpect("[True] == [True]", true);
+        successExpect("[\"hello\", \"world\"] == [\"hello\", \"world\"]", true);
+        successExpect("[\"hello\", \"world\"] == [True]", false);
+
+
+        successExpect("def f(x):\n" +
+                "  return [True, False, 2, 3]\n" +
+                "end\n" +
+                "f(1)[1] == False", true);
+        successExpect("def f(x):\n" +
+                "  return [True, False, 2, 3]\n" +
+                "end\n" +
+                "f(1)[2] == 2", true);
+        successExpect("def f(x):\n" +
+                "  return None\n" +
+                "end\n" +
+                "f(1) == None", true);
+        failure("def f(x):\n" +
+                "  x = x+1\n" +
+                "end\n" +
+                "f(1) == None");
     }
 
     @Test
     public void testInequalityComparison() {
-        // TODO
+        successExpect("3 <= 3", true);
+        successExpect("2 >= 3", false);
+        successExpect("3 > 2", true);
+        successExpect("\"hello\" <= \"hello\"", true);
+        successExpect("\"hello\" < \"world\"", true);
+
+        successExpect("def f(x):\n" +
+                "  return [True, False, 2, 3]\n" +
+                "end\n" +
+                "f(1)[2] <= 2", true);
+        successExpect("def f(x):\n" +
+                "  return [True, False, 2, 3]\n" +
+                "end\n" +
+                "f(1)[2] > 2", false);
+        failure("def f(x):\n" +
+                "  return None\n" +
+                "end\n" +
+                "f(1) > 3");
+        failure("def f(x):\n" +
+                "  x = x+1\n" +
+                "end\n" +
+                "f(1) < 3");
     }
 
     @Test
     public void testIndexAccess() {
-        // TODO
+        // Map
+        successExpect("a = {\"\": \"Hi\", \"hello\": 3, \"world\": 2}\n" +
+                "a[\"\"]", "Hi");
+        successExpect("a = {\"\": \"Hi\", \"hello\": 3, \"world\": 2}\n" +
+                "a[\"hello\"]", 3);
+        failure("a = {\"\": \"Hi\", \"hello\": 3, \"world\": 2}\n" +
+                "a[\"World\"]");
+        successExpect("a = {2: \"Hi\", True: 3, \"world\": 2}\n" +
+                "a[2]", "Hi");
+        successExpect("a = {2: \"Hi\", True: 3, \"world\": 2}\n" +
+                "a[3 == 3]", 3);
+        successExpect("a = {2: \"Hi\", True: 3, \"world\": 2}\n" +
+                "a[\"world\"]", 2);
+
+        // Arrays
+        successExpect("a = [1, 2, \"Hello\", \"World\", True, False]\n" +
+                "a[0]", 1);
+        successExpect("a = [1, 2, \"Hello\", \"World\", True, False]\n" +
+                "a[2]", "Hello");
+        successExpect("a = [1, 2, \"Hello\", \"World\", True, False]\n" +
+                "a[4]", true);
+        failure("a = [1, 2, \"Hello\", \"World\", True, False]\n" +
+                "a[6]");
+
+        // Different types
+        failure("def f(x):\n" +
+                "  return \"Hello\"\n" +
+                "end\n" +
+                "f(1)[4]");
+        failure("def f(x):\n" +
+                "  return {True: False, 2: 3}\n" +
+                "end\n" +
+                "f(1)[0]");
+        failure("def f(x):\n" +
+                "  return 3\n" +
+                "end\n" +
+                "f(1)[0]");
+        failure("def f(x, y):\n" +
+                "  return x or y\n" +
+                "end\n" +
+                "f(True, False)[0]");
     }
 
     // STATEMENTS
@@ -356,7 +521,6 @@ public class InterpreterUnitTests extends TestFixture {
                             "end\n" +
                             "a", "yo");
 
-        /* TODO : uncomment when functions implemented
         failure("def f(x):\n" +
                 "  return None\n" +
                 "end\n" +
@@ -365,7 +529,6 @@ public class InterpreterUnitTests extends TestFixture {
                 "else:\n" +
                 "  a = {2: False}\n" +
                 "end\n");
-        */
     }
 
     @Test
@@ -388,7 +551,6 @@ public class InterpreterUnitTests extends TestFixture {
                             "end\n" +
                             "b", "yo");
 
-        /* TODO : uncomment when functions implemented
         failure("def f(x):\n" +
                 "  return None\n" +
                 "end\n" +
@@ -397,24 +559,61 @@ public class InterpreterUnitTests extends TestFixture {
                 "  b = a\n" +
                 "end\n" +
                 "b");
-        */
     }
 
     @Test
     public void testWhile() {
-        // TODO
+        successExpect("i = 1\n" +
+                "while(i < 3):\n" +
+                "    i = i+1\n" +
+                "end\n" +
+                "i\n", 3);
+        successExpect("i = 1\n" +
+                "b = 1" +
+                "while(i < 3):\n" +
+                "    i = i+1\n" +
+                "    b = 2\n" +
+                "end\n" +
+                "b", 2);
+        failure("def f(x):\n" +
+                "  return None\n" +
+                "end\n" +
+                "b = 1\n" +
+                "while f(1) > 2:\n" +
+                "  b = 0\n" +
+                "end\n" +
+                "b");
     }
 
     // FUNCTIONS
 
     @Test
-    public void testFunctionDefinition() {
-        // TODO
+    public void testFunction() {
+        successExpect("def f(x):\n" +
+                "  return x + 2\n" +
+                "end\n" +
+                "3", 3);
+        successExpect("def f(x):\n" +
+                "  x + 2\n" +
+                "end\n" +
+                "f(2)", None.INSTANCE);
+        failure("def f(x):\n" +
+                "  x + 2\n" +
+                "end\n" +
+                "a = f(2)");
+        successExpect("def f(x):\n" +
+                "  x + 2\n" +
+                "  return None\n" +
+                "end\n" +
+                "a = f(2)\n" +
+                "a", None.INSTANCE);
+        successExpect("def f(x):\n" +
+                "  return x + 2\n" +
+                "end\n" +
+                "f(2)", 4);
+        successExpect("def f(x, y):\n" +
+                "  return x or y\n" +
+                "end\n" +
+                "f(True, False)", true);
     }
-
-    @Test
-    public void testFunctionCall() {
-        // TODO
-    }
-
 }

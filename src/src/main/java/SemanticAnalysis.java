@@ -394,7 +394,7 @@ public final class SemanticAnalysis {
                 ||  left == Type.UNKNOWN_TYPE || right == Type.UNKNOWN_TYPE)
                     r.set(0, Type.BOOLEAN);
                 else
-                    r.error("Inequality comparison can only be used with integers and strings", node);
+                    r.error("Logic operations can only be done on booleans", node);
              });
         } else if (node.isIdxAccess()) {
             R.rule(node, "type")

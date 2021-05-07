@@ -12,11 +12,10 @@ import scopes.RootScope;
 import scopes.Scope;
 import scopes.SyntheticDeclarationNode;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static norswap.utils.Util.cast;
+import static norswap.utils.Vanilla.coIterate;
 import static norswap.utils.Vanilla.map;
 
 
@@ -35,38 +34,35 @@ public final class Interpreter {
         this.reactor = reactor;
 
         // SCOPES
-        visitor.register(RootNode.class,                this::root);
-        visitor.register(BlockNode.class,               this::block);
+        visitor.register(RootNode.class, this::root);
+        visitor.register(BlockNode.class, this::block);
 
         // PRIMITIVE LITERALS
-        visitor.register(NoneNode.class,                this::none);
-        visitor.register(BoolNode.class,                this::bool);
-        visitor.register(IntegerNode.class,             this::integer);
-        visitor.register(StringNode.class,              this::string);
+        visitor.register(NoneNode.class, this::none);
+        visitor.register(BoolNode.class, this::bool);
+        visitor.register(IntegerNode.class, this::integer);
+        visitor.register(StringNode.class, this::string);
 
         // VARIABLES
-        visitor.register(IdentifierNode.class,          this::identifier);
-        visitor.register(VarAssignmentNode.class,       this::varAssignment);
+        visitor.register(IdentifierNode.class, this::identifier);
+        visitor.register(VarAssignmentNode.class, this::varAssignment);
 
         // COLLECTIONS
-        visitor.register(MapNode.class,                 this::map_);
-        visitor.register(ArrayNode.class,               this::array);
+        visitor.register(MapNode.class, this::map_);
+        visitor.register(ArrayNode.class, this::array);
 
         // OPERATIONS
-        visitor.register(UnaryNode.class,               this::unary);
-        visitor.register(BinaryNode.class,              this::binary);
+        visitor.register(UnaryNode.class, this::unary);
+        visitor.register(BinaryNode.class, this::binary);
 
         // STATEMENTS
-        visitor.register(IfNode.class,                  this::if_);
-        visitor.register(ElseNode.class,                this::else_);
-        visitor.register(ForNode.class,                 this::for_);
-        visitor.register(WhileNode.class,               this::while_);
+        visitor.register(IfNode.class, this::if_);
+        visitor.register(ElseNode.class, this::else_);
+        visitor.register(ForNode.class, this::for_);
+        visitor.register(WhileNode.class, this::while_);
 
         // FUNCTIONS
-        visitor.register(FunctionDefinitionNode.class,  this::functionDefinition);
-        visitor.register(FunctionCallNode.class,        this::functionCall);
-        visitor.register(ParameterNode.class,           this::parameter);
-
+        visitor.register(FunctionCallNode.class, this::functionCall);
         visitor.registerFallback(node -> null);
     }
 
@@ -90,7 +86,8 @@ public final class Interpreter {
 
     private static class Return extends NoStackException {
         final Object value;
-        private Return (Object value) {
+
+        private Return(Object value) {
             this.value = value;
         }
     }
@@ -107,11 +104,11 @@ public final class Interpreter {
         if (arg == None.INSTANCE)
             return "None";
         else if (arg instanceof PolymorphArray)
-            return ((PolymorphArray) arg).toString();
+            return arg.toString();
         else if (arg instanceof FunctionDefinitionNode)
             return ((FunctionDefinitionNode) arg).name.value;
         else if (arg instanceof PolymorphMap)
-            return ((PolymorphMap) arg).toString();
+            return arg.toString();
         else if (arg instanceof Boolean)
             return (boolean) arg ? "True" : "False";
         else
@@ -125,11 +122,11 @@ public final class Interpreter {
     }
 
     private String type(Object arg) {
-        if (arg instanceof Integer)  return "int";
-        if (arg instanceof Boolean)  return "bool";
-        if (arg instanceof String)   return "string";
+        if (arg instanceof Integer) return "int";
+        if (arg instanceof Boolean) return "bool";
+        if (arg instanceof String) return "string";
         if (arg instanceof PolymorphArray) return "array";
-        if (arg instanceof PolymorphMap)  return "map";
+        if (arg instanceof PolymorphMap) return "map";
         return "unknown type";
     }
 
@@ -229,7 +226,7 @@ public final class Interpreter {
                 if (isPrimitive(indexer)) {
                     map.put(indexer, get(n.right));
                 } else {
-                    throw new PassthroughException(new RuntimeException("Can only use string, integers and booleans as keys of a map, not "+type(indexer)));
+                    throw new PassthroughException(new RuntimeException("Can only use string, integers and booleans as keys of a map, not " + type(indexer)));
                 }
                 return null;
             }
@@ -238,7 +235,7 @@ public final class Interpreter {
         throw new Error("should not reach here");
     }
 
-    private int getIndex (ASTNode node) {
+    private int getIndex(ASTNode node) {
         long index = get(node);
         if (index < 0)
             throw new ArrayIndexOutOfBoundsException("Negative index: " + index);
@@ -246,8 +243,6 @@ public final class Interpreter {
             throw new ArrayIndexOutOfBoundsException("Index exceeds max array index (2ˆ31 - 2): " + index);
         return (int) index;
     }
-
-
 
 
     // COLLECTIONS
@@ -258,7 +253,7 @@ public final class Interpreter {
                 if (isPrimitive(get(pair.left))) {
                     dictionary.put(get(pair.left), get(pair.right));
                 } else {
-                    throw new PassthroughException(new RuntimeException("Cannot use "+type(get(pair.left))+" as key in map"));
+                    throw new PassthroughException(new RuntimeException("Cannot use " + type(get(pair.left)) + " as key in map"));
                 }
             }
         }
@@ -271,7 +266,7 @@ public final class Interpreter {
         } else if (n.size != null) {
             Object arg = get(n.size);
             if (!(arg instanceof Integer))
-                throw new PassthroughException(new RuntimeException("Lists with size argument must be declared with an int not "+type(arg)));
+                throw new PassthroughException(new RuntimeException("Lists with size argument must be declared with an int not " + type(arg)));
 
             return new PolymorphArray(IntStream.range(0, (int) arg).mapToObj((x) -> None.INSTANCE).toArray());
         }
@@ -316,7 +311,7 @@ public final class Interpreter {
                         throw new PassthroughException(e);
                     }
                 } else {
-                    throw new PassthroughException(new RuntimeException("Argument of sort function must be an array, not "+type(arg)));
+                    throw new PassthroughException(new RuntimeException("Argument of sort function must be an array, not " + type(arg)));
                 }
             case UnaryNode.PARSE_INT:
                 arg = get(n.child);
@@ -339,7 +334,7 @@ public final class Interpreter {
             case UnaryNode.NEGATION:
                 arg = get(n.child);
                 if (arg instanceof Integer) {
-                    return - (int) arg;
+                    return -(int) arg;
                 } else {
                     throw new PassthroughException(new RuntimeException("Cannot negate a non-int value " + type(arg)));
                 }
@@ -361,7 +356,7 @@ public final class Interpreter {
                     PolymorphMap map = (PolymorphMap) arg;
                     return map.size();
                 } else {
-                    throw new PassthroughException(new RuntimeException("Argument of len function must be an array or a map, not" +type(arg)));
+                    throw new PassthroughException(new RuntimeException("Argument of len function must be an array or a map, not" + type(arg)));
                 }
             default:
                 return null;
@@ -387,16 +382,16 @@ public final class Interpreter {
     }
 
     private Object arithmeticOperation(BinaryNode n) {
-        Object leftObject  = get(n.left);
+        Object leftObject = get(n.left);
         Object rightObject = get(n.right);
 
         if (!(leftObject instanceof Integer && rightObject instanceof Integer)) {
             throw new PassthroughException(new ClassCastException("Cannot do arithmetic operations on "
-                                                                 + type(leftObject) + " and "
-                                                                 + type(rightObject) + "."));
+                    + type(leftObject) + " and "
+                    + type(rightObject) + "."));
         }
 
-        Integer left  = (Integer) leftObject;
+        Integer left = (Integer) leftObject;
         Integer right = (Integer) rightObject;
 
         switch (n.code) {
@@ -416,16 +411,16 @@ public final class Interpreter {
     }
 
     private Object logicOperation(BinaryNode n) {
-        Object leftObject  = get(n.left);
-        Object rightObject = get(n.left);
+        Object leftObject = get(n.left);
+        Object rightObject = get(n.right);
 
         if (!(leftObject instanceof Boolean && rightObject instanceof Boolean)) {
             throw new PassthroughException(new ClassCastException("Cannot do logic operations on "
-                                                                 + type(leftObject) + " and "
-                                                                 + type(rightObject) + "."));
+                    + type(leftObject) + " and "
+                    + type(rightObject) + "."));
         }
 
-        Boolean left  = (Boolean) leftObject;
+        Boolean left = (Boolean) leftObject;
         Boolean right = (Boolean) rightObject;
 
         switch (n.code) {
@@ -450,19 +445,19 @@ public final class Interpreter {
     }
 
     private Object inequalityComparison(BinaryNode n) {
-        Object leftObject  = get(n.left);
-        Object rightObject = get(n.left);
+        Object leftObject = get(n.left);
+        Object rightObject = get(n.right);
 
         int comparison;
 
         if (leftObject instanceof Integer && rightObject instanceof Integer) {
-            Integer left  = (Integer) leftObject;
+            Integer left = (Integer) leftObject;
             Integer right = (Integer) rightObject;
 
             comparison = left.compareTo(right);
 
         } else if (leftObject instanceof String && rightObject instanceof String) {
-            String left  = (String) leftObject;
+            String left = (String) leftObject;
             String right = (String) rightObject;
 
             comparison = left.compareTo(right);
@@ -492,7 +487,7 @@ public final class Interpreter {
     }
 
     private Object idxAccess(BinaryNode n) {
-        Object leftObject  = get(n.left);
+        Object leftObject = get(n.left);
         Object rightObject = get(n.right);
 
         if (leftObject instanceof PolymorphArray && rightObject instanceof Integer) {
@@ -503,14 +498,23 @@ public final class Interpreter {
             } catch (ArrayIndexOutOfBoundsException e) {
                 throw new PassthroughException(e);
             }
-        } else if (leftObject instanceof PolymorphMap) {
+        } else if (leftObject instanceof PolymorphMap && isPrimitive(rightObject)) {
             PolymorphMap map = (PolymorphMap) leftObject;
-            /* todo use isprimitive() to check type of keys */
-            /* todo raise passthrough exception if invalid key */
-            /* TODO ?? indexing with strings won't work since Object.compareTo will compare references */
+            try {
+                return map.get(rightObject);
+            } catch (RuntimeException e) {
+                throw new PassthroughException(e);
+            }
         }
-        return null;
-        /*TODO GUS*/
+        // Errors in case of invalid types
+        if (leftObject instanceof PolymorphMap)
+            throw new PassthroughException(new ClassCastException(type(rightObject) + " cannot index a map"));
+
+        else if (leftObject instanceof PolymorphArray)
+            throw new PassthroughException(new ClassCastException(type(rightObject) + " cannot index an array"));
+
+        else
+            throw new PassthroughException(new ClassCastException("Only array and map can be indexed, not" + type(leftObject)));
     }
 
 
@@ -555,7 +559,8 @@ public final class Interpreter {
         storage = new ScopeStorage(scope, storage);
 
         Object arg = get(n.list);
-        if (!(arg instanceof PolymorphArray)) throw new PassthroughException(new RuntimeException("Cannot iterate over "+type(arg)));
+        if (!(arg instanceof PolymorphArray))
+            throw new PassthroughException(new RuntimeException("Cannot iterate over " + type(arg)));
 
         PolymorphArray array = (PolymorphArray) arg;
         for (Object elem : array) {
@@ -586,19 +591,30 @@ public final class Interpreter {
 
 
     // FUNCTIONS
-    private Object functionDefinition(FunctionDefinitionNode n) {
-        /* TODO Gus  */
-        return null;
-    }
-
     private Object functionCall(FunctionCallNode n) {
-        /* TODO  Gus
-        *   une fonction sans return doit retourner None*/
-        return null;
-    }
+        Object decl = get(n.functionName);
 
-    private Object parameter(ParameterNode n) {
-        /* TODO Gus */
-        return null;
+        n.args.forEach(this::run);
+        Object[] args = map(n.args, new Object[0], visitor);
+
+        if (decl == None.INSTANCE)
+            throw new PassthroughException(new NullPointerException("calling a null function"));
+
+        ScopeStorage oldStorage = storage;
+        Scope scope = reactor.get(decl, "scope");
+        storage = new ScopeStorage(scope, storage);
+
+        FunctionDefinitionNode funDecl = (FunctionDefinitionNode) decl;
+        coIterate(args, funDecl.args,
+                (arg, param) -> storage.set(scope, param.param.value, arg));
+
+        try {
+            get(funDecl.block);
+        } catch (Return r) {
+            return r.value;
+        } finally {
+            storage = oldStorage;
+        }
+        return None.INSTANCE;
     }
 }

@@ -116,16 +116,14 @@ public final class SemanticAnalysis {
             R.set(node, "decl",  maybeCtx.declaration);
             R.set(node, "scope", maybeCtx.scope);
 
-            R.rule(node, "type")
-                    .using(maybeCtx.declaration, "type")
-                    .by(r -> {
-                        if (maybeCtx.declaration instanceof ForNode || maybeCtx.declaration instanceof ListComprehensionNode) {
-                            r.set(node, "type", Type.UNKNOWN_TYPE);
-                        } else {
-                            r.set(node, "type", r.get(0));
-                        }
-
-                    });
+            if (maybeCtx.declaration instanceof ForNode || maybeCtx.declaration instanceof ListComprehensionNode) {
+                R.set(node, "type", Type.UNKNOWN_TYPE);
+            } else {
+                R.rule(node, "type")
+                        .using(maybeCtx.declaration, "type")
+                        .by(Rule::copyFirst);
+            }
+            
             return;
         }
 

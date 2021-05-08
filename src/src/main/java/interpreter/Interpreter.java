@@ -109,14 +109,8 @@ public final class Interpreter {
     }
 
     public static String convertToString(Object arg) {
-        if (arg == None.INSTANCE)
-            return "None";
-        else if (arg instanceof PolymorphArray)
-            return arg.toString();
-        else if (arg instanceof FunctionDefinitionNode)
+        if (arg instanceof FunctionDefinitionNode)
             return ((FunctionDefinitionNode) arg).name.value;
-        else if (arg instanceof PolymorphMap)
-            return arg.toString();
         else if (arg instanceof Boolean)
             return (boolean) arg ? "True" : "False";
         else
@@ -616,7 +610,6 @@ public final class Interpreter {
         if (!(arg instanceof Boolean))
             throw new PassthroughException(new RuntimeException("While loop needs boolean condition, not " + type(arg)));
 
-        // TODO CHANGE
         while ((boolean) arg) {
             get(n.block);
             arg = get(n.bool);

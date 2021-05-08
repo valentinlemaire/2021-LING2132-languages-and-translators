@@ -10,9 +10,9 @@ import static interpreter.Interpreter.recConvertToString;
 import static norswap.utils.Util.cast;
 
 public class PolymorphMap {
-    private HashMap<Long, Object> integerMap;
-    private HashMap<String, Object> stringMap;
-    private HashMap<Boolean, Object> boolMap;
+    private final HashMap<Long, Object> integerMap;
+    private final HashMap<String, Object> stringMap;
+    private final HashMap<Boolean, Object> boolMap;
 
     public PolymorphMap() {
         integerMap = new HashMap<>();

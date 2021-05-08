@@ -36,7 +36,7 @@ public class File {
     public void write(Object o) throws IOException {
         String s = o.toString();
         if (writer != null)
-            writer.write(s);
+            writer.write(s + "\n");
         else
             throw new IOException("Calling write on file in read mode");
     }

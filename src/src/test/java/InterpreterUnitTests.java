@@ -294,6 +294,16 @@ public class InterpreterUnitTests extends TestFixture {
                 "close(f)\n" +
                 "f = open(\"src/assets/write_tests.txt\", \"r\")\n" +
                 "read(f)\n read(f)\n read(f)", "2");
+
+        // failures
+        failure("f = open(\"src/assets/non_existant.txt\", \"w\")");
+        failure("f = open(\"src/assets/write_tests.txt\", \"w\")\n" +
+                "read(f)");
+        failure("f = open(\"src/assets/read_tests.txt\", \"r\")\n" +
+                "write(f, \"Hello World\")");
+        failure("a = 2\n" +
+                "read(a)");
+
     }
 
     @Test

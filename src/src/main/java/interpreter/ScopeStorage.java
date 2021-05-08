@@ -1,4 +1,5 @@
 package interpreter;
+import Types.PolymorphArray;
 import scopes.RootScope;
 import scopes.Scope;
 
@@ -64,14 +65,23 @@ public final class ScopeStorage
     /**
      * To be called on the root frame to initialize its variables.
      */
-    void initRoot(RootScope root)
+    void initRoot(RootScope root, String[] args)
     {
         set(root, root._true  .name(), true);
         set(root, root._false .name(), false);
         set(root, root._none  .name(), None.INSTANCE);
 
+        set(root, root._args  .name(), new PolymorphArray((Object[]) args));
+
         // Function and types are not assigned values in frames - instead they derive
-        // their runtime value values from the corresponding DeclarationNode.
+        // their runtime value values from the corresponding Decla        set(root, root._true  .name(), true);
+        //        set(root, root._false .name(), false);
+        //        set(root, root._none  .name(), None.INSTANCE);
+        //
+        //        set(root, root._args  .name(), new PolymorphArray(args));
+        //
+        //        // Function and types are not assigned values in frames - instead they derive
+        //        // their runtime value values from the corresponding DeclarationNode.rationNode.
     }
 
     // ---------------------------------------------------------------------------------------------

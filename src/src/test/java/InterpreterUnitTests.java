@@ -3,7 +3,6 @@ import Types.PolymorphMap;
 import ast.ASTNode;
 import interpreter.Interpreter;
 import interpreter.None;
-import interpreter.PassthroughException;
 import norswap.autumn.AutumnTestFixture;
 import norswap.utils.TestFixture;
 import norswap.utils.visitors.Walker;
@@ -12,10 +11,6 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.lang.annotation.Annotation;
-import java.util.Arrays;
-
-import static norswap.utils.Util.cast;
 
 
 public class InterpreterUnitTests extends TestFixture {
@@ -55,7 +50,7 @@ public class InterpreterUnitTests extends TestFixture {
         assertTrue(reactor.errors().isEmpty(), "Semantic analysis failed: "+reactor.reportErrors(Object::toString));
 
 
-        interpreter = new Interpreter(reactor);
+        interpreter = new Interpreter(reactor, new String[0]);
         Object result = interpreter.interpret(tree);
         assertEquals(result, expected, 1, () -> "");
     }
@@ -67,7 +62,7 @@ public class InterpreterUnitTests extends TestFixture {
         reactor.run();
         assertTrue(reactor.errors().isEmpty(), "Semantic analysis failed: "+reactor.reportErrors(Object::toString));
 
-        interpreter = new Interpreter(reactor);
+        interpreter = new Interpreter(reactor, new String[0]);
 
         try {
             interpreter.interpret(tree);
@@ -84,9 +79,9 @@ public class InterpreterUnitTests extends TestFixture {
 
     @Test
     public void testInteger() {
-        successExpect("1", 1);
+        successExpect("1", (long) 1);
 
-        successExpect("124", 124);
+        successExpect("124", (long) 124);
     }
 
     @Test
@@ -112,7 +107,7 @@ public class InterpreterUnitTests extends TestFixture {
 
     @Test
     public void testVariables() {
-        successExpect("a = 1\na", 1);
+        successExpect("a = 1\na", (long) 1);
 
         successExpect("a = \"yo\"\na", "yo");
 
@@ -126,18 +121,17 @@ public class InterpreterUnitTests extends TestFixture {
     @Test
     public void testMap() {
         PolymorphMap map = new PolymorphMap();
-        map.put(1, "yo");
-        map.put("test", 3);
+        map.put((long) 1, "yo");
+        map.put("test", (long) 3);
         map.put(false, None.INSTANCE);
         successExpect("{1:\"yo\", \"test\":3, False:None}", map);
 
         PolymorphMap map2 = new PolymorphMap();
-        map2.put(1, "yo");
+        map2.put((long) 1, "yo");
         map2.put(true, map);
-        map2.put("this is getting complicated", new PolymorphArray(1, None.INSTANCE, false));
+        map2.put("this is getting complicated", new PolymorphArray((long) 1, None.INSTANCE, false));
 
         successExpect("{1: \"yo\", True: {1:\"yo\", \"test\":3, False:None}, \"this is getting complicated\": [1, None, False]}", map2);
-
 
         failure("{None:2}");
 
@@ -147,7 +141,7 @@ public class InterpreterUnitTests extends TestFixture {
 
     @Test
     public void testArray() {
-        successExpect("[None, 1, \"yo\", False]", new PolymorphArray(None.INSTANCE, 1, "yo", false));
+        successExpect("[None, 1, \"yo\", False]", new PolymorphArray(None.INSTANCE, (long) 1, "yo", false));
 
         successExpect("[:4]", new PolymorphArray(None.INSTANCE, None.INSTANCE, None.INSTANCE, None.INSTANCE));
 
@@ -157,14 +151,46 @@ public class InterpreterUnitTests extends TestFixture {
                       "[:f(1)]");
     }
 
+    @Test
+    public void testListComprehension() {
+        successExpect("a = [True, None, \"yo\", None, 4]\n" +
+                            "b = [x for x in a if x != None]\n" +
+                            "b", new PolymorphArray(true, "yo", (long) 4));
+
+        successExpect("a = [True, None, \"yo\", None, 4]\n" +
+                            "b = [[x] for x in a if x != None]\n" +
+                            "b", new PolymorphArray(new PolymorphArray(true), new PolymorphArray("yo"), new PolymorphArray((long) 4)));
+
+        successExpect("a = range(10)\n" +
+                            "b = [x+1 for x in a if x % 2 == 0]\n" +
+                            "b", new PolymorphArray((long) 1, (long) 3, (long) 5, (long) 7, (long) 9));
+
+        successExpect("def f(a):\n" +
+                            "  return a+1\n" +
+                            "end\n" +
+                            "a = range(10)\n" +
+                            "b = [f(x) for x in a if x < 3]\n" +
+                            "b", new PolymorphArray((long) 1, (long) 2, (long) 3));
+
+        failure(  "def f(a):\n" +
+                        "  return a+1\n" +
+                        "end\n" +
+                        "a = range(10)\n" +
+                        "b = [x+1 for x in a if f(x)]\n" +
+                        "b");
+
+
+
+    }
+
     // UNARY OPERATIONS
 
     @Test
     public void testRange() {
-        successExpect("range(3)", new PolymorphArray(0, 1, 2));
+        successExpect("range(3)", new PolymorphArray((long) 0, (long) 1, (long) 2));
 
         successExpect("a = 5\n" +
-                            "range(a)", new PolymorphArray(0, 1, 2, 3, 4));
+                            "range(a)", new PolymorphArray((long) 0, (long) 1, (long) 2, (long) 3, (long) 4));
 
         failure("def f(x):\n" +
                       "  return None\n" +
@@ -175,10 +201,10 @@ public class InterpreterUnitTests extends TestFixture {
     @Test
     public void testIndexer() {
         successExpect("a = {1: 3, \"yo\":None}\n" +
-                            "indexer(a)", new PolymorphArray(1, "yo"));
+                            "indexer(a)", new PolymorphArray((long) 1, "yo"));
 
         successExpect("a = [1, 2, 3]\n" +
-                            "indexer(a)", new PolymorphArray(0, 1, 2));
+                            "indexer(a)", new PolymorphArray((long) 0, (long) 1, (long) 2));
 
         failure("def f(x):\n" +
                       "  return None\n" +
@@ -189,7 +215,7 @@ public class InterpreterUnitTests extends TestFixture {
     @Test
     public void testSort() {
         successExpect("a = [2, 5, 3]\n" +
-                            "sort(a)", new PolymorphArray(2, 3, 5));
+                            "sort(a)", new PolymorphArray((long) 2, (long) 3, (long) 5));
 
         successExpect("a = [\"a\", \"c\", \"b\"]\n" +
                             "sort(a)", new PolymorphArray("a", "b", "c"));
@@ -200,9 +226,9 @@ public class InterpreterUnitTests extends TestFixture {
 
     @Test
     public void testParseInt() {
-        successExpect("int(\"2\")", 2);
+        successExpect("int(\"2\")", (long) 2);
 
-        successExpect("int(\"-2\")", -2);
+        successExpect("int(\"-2\")", (long) -2);
 
         failure("def f(x):\n" +
                       "  return None\n" +
@@ -257,11 +283,11 @@ public class InterpreterUnitTests extends TestFixture {
     public void testNegation() {
         successExpect("a = 5\n" +
                             "b = -a\n" +
-                            "b", -5);
+                            "b", (long) -5);
 
         successExpect("a = -10\n" +
                             "b = -a + 1\n" +
-                            "b", 11);
+                            "b", (long) 11);
 
         failure("def f(x):\n" +
                       "  return None\n" +
@@ -287,15 +313,13 @@ public class InterpreterUnitTests extends TestFixture {
                       "b");
     }
 
-    @Test
-    public void testReturn() {
-        // TODO when functions are implemented
-    }
 
     @Test
     public void testLen() {
-        successExpect("len([1, 2, 3])", 3);
-        successExpect("len({1: 2, 3: None})", 2);
+        successExpect("len([1, 2, 3])", (long) 3);
+
+        successExpect("len({1: 2, 3: None})", (long) 2);
+
         failure("def f(x):\n" +
                 "  return None\n" +
                 "end\n" +
@@ -307,23 +331,23 @@ public class InterpreterUnitTests extends TestFixture {
     @Test
     public void testArithmeticOperation() {
         // basic operations
-        successExpect("5+2", 7);
-        successExpect("5-2", 3);
-        successExpect("5*2", 10);
-        successExpect("5/2", 2);
-        successExpect("5%2", 1);
+        successExpect("5+2", (long) 7);
+        successExpect("5-2", (long) 3);
+        successExpect("5*2", (long) 10);
+        successExpect("5/2", (long) 2);
+        successExpect("5%2", (long) 1);
 
         // with variables
         successExpect("a = 5\n" +
-                "a+2", 7);
+                "a+2", (long) 7);
         successExpect("a = 5\n" +
-                "a-2", 3);
+                "a-2", (long) 3);
         successExpect("a = 5\n" +
-                "a*2", 10);
+                "a*2", (long) 10);
         successExpect("a = 5\n" +
-                "a/2", 2);
+                "a/2", (long) 2);
         successExpect("a = 5\n" +
-                "a%2", 1);
+                "a%2", (long) 1);
 
         // with invalid return values in functions
         failure("def f(x):\n" +
@@ -470,19 +494,19 @@ public class InterpreterUnitTests extends TestFixture {
         successExpect("a = {\"\": \"Hi\", \"hello\": 3, \"world\": 2}\n" +
                 "a[\"\"]", "Hi");
         successExpect("a = {\"\": \"Hi\", \"hello\": 3, \"world\": 2}\n" +
-                "a[\"hello\"]", 3);
+                "a[\"hello\"]", (long) 3);
         failure("a = {\"\": \"Hi\", \"hello\": 3, \"world\": 2}\n" +
                 "a[\"World\"]");
         successExpect("a = {2: \"Hi\", True: 3, \"world\": 2}\n" +
                 "a[2]", "Hi");
         successExpect("a = {2: \"Hi\", True: 3, \"world\": 2}\n" +
-                "a[3 == 3]", 3);
+                "a[3 == 3]", (long) 3);
         successExpect("a = {2: \"Hi\", True: 3, \"world\": 2}\n" +
-                "a[\"world\"]", 2);
+                "a[\"world\"]", (long) 2);
 
         // Arrays
         successExpect("a = [1, 2, \"Hello\", \"World\", True, False]\n" +
-                "a[0]", 1);
+                "a[0]", (long) 1);
         successExpect("a = [1, 2, \"Hello\", \"World\", True, False]\n" +
                 "a[2]", "Hello");
         successExpect("a = [1, 2, \"Hello\", \"World\", True, False]\n" +
@@ -516,10 +540,16 @@ public class InterpreterUnitTests extends TestFixture {
         successExpect("a = 0\n" +
                             "if True:\n" +
                             "  a = 1\n" +
+                            "end\n" +
+                            "a", (long) 1);
+
+        successExpect("a = 0\n" +
+                            "if True:\n" +
+                            "  a = 1\n" +
                             "else:\n" +
                             "  a = 2\n" +
                             "end\n" +
-                            "a", 1);
+                            "a", (long) 1);
 
         successExpect("a = 0\n" +
                             "if not True:\n" +
@@ -529,7 +559,7 @@ public class InterpreterUnitTests extends TestFixture {
                             "else:\n" +
                             "  a = 3\n" +
                             "end\n" +
-                            "a", 2);
+                            "a", (long) 2);
 
         successExpect("a = True\n" +
                             "if not a:\n" +
@@ -557,13 +587,13 @@ public class InterpreterUnitTests extends TestFixture {
                             "for a in [{1:2, 3:4}, \"yo\", 2]:\n" +
                             "  b = a\n" +
                             "end\n" +
-                            "b", 2);
+                            "b", (long) 2);
 
         successExpect("b = 1\n" +
                             "for a in range(3):\n" +
                             "  b = a\n" +
                             "end\n" +
-                            "b", 2);
+                            "b", (long) 2);
 
         successExpect("b = 1\n" +
                             "for a in indexer({\"yo\":2, 3:4}):\n" +
@@ -587,14 +617,14 @@ public class InterpreterUnitTests extends TestFixture {
                 "while(i < 3):\n" +
                 "    i = i+1\n" +
                 "end\n" +
-                "i\n", 3);
+                "i\n", (long) 3);
         successExpect("i = 1\n" +
                 "b = 1" +
                 "while(i < 3):\n" +
                 "    i = i+1\n" +
                 "    b = 2\n" +
                 "end\n" +
-                "b", 2);
+                "b", (long) 2);
         failure("def f(x):\n" +
                 "  return None\n" +
                 "end\n" +
@@ -612,7 +642,7 @@ public class InterpreterUnitTests extends TestFixture {
         successExpect("def f(x):\n" +
                 "  return x + 2\n" +
                 "end\n" +
-                "3", 3);
+                "3", (long) 3);
         successExpect("def f(x):\n" +
                 "  x + 2\n" +
                 "end\n" +
@@ -630,10 +660,18 @@ public class InterpreterUnitTests extends TestFixture {
         successExpect("def f(x):\n" +
                 "  return x + 2\n" +
                 "end\n" +
-                "f(2)", 4);
+                "f(2)", (long) 4);
         successExpect("def f(x, y):\n" +
                 "  return x or y\n" +
                 "end\n" +
                 "f(True, False)", true);
+
+        successExpect("def f(x, y):\n" +
+                            "  if not not x:\n" +
+                            "    return y\n" +
+                            "  end\n" +
+                            "  return \"nope\"\n" +
+                            "end\n" +
+                            "f(not False, \"yep\")", "yep");
     }
 }

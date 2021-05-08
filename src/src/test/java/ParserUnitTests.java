@@ -129,6 +129,36 @@ public class ParserUnitTests extends AutumnTestFixture {
     }
 
     @Test
+    public void testListComprehension() {
+        this.rule = parser.list_comprehension;
+        successExpect("[x for x in [1, 2]]", new ListComprehensionNode(
+                new IdentifierNode("x"),
+                new IdentifierNode("x"),
+                new ArrayNode(Arrays.asList(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)})),
+                null));
+
+        successExpect("[x for x in [1, 2] if x < 2]", new ListComprehensionNode(
+                new IdentifierNode("x"),
+                new IdentifierNode("x"),
+                new ArrayNode(Arrays.asList(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)})),
+                new BinaryNode(new IdentifierNode("x"), new IntegerNode(2), BinaryNode.L)));
+
+        successExpect("[f(x) for x in [1, 2] if x < 2]", new ListComprehensionNode(
+                new FunctionCallNode(new IdentifierNode("f"), Arrays.asList(new ASTNode[]{new IdentifierNode("x")})),
+                new IdentifierNode("x"), new ArrayNode(Arrays.asList(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)})),
+                new BinaryNode(new IdentifierNode("x"), new IntegerNode(2), BinaryNode.L)));
+
+        failure("[x=2 for x in [1, 2]]");
+
+        failure("[for x in [1, 2] x if x != 0]");
+
+        failure("[x for x in [1, 2]");
+
+        failure("[x for x [1, 2]]");
+
+    }
+
+    @Test
     public void testMap() {
         this.rule = parser.map;
         successExpect("{1 : 6/5,\t \"hello\"  : fun(2)}", new MapNode(Arrays.asList(

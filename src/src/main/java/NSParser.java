@@ -91,7 +91,7 @@ public final class NSParser extends Grammar {
     // Integers
     public rule integer_lit = seq(digit.at_least(1), not(identifier))
             .word()
-            .push($ -> new IntegerNode(Integer.parseInt($.str())));
+            .push($ -> new IntegerNode(Long.parseLong($.str())));
 
     public rule integer = lazy(() -> choice(integer_lit, this.len, this.parse_int));
 
@@ -218,12 +218,12 @@ public final class NSParser extends Grammar {
 
     // EXTRAS
     // range function
-    public rule range = seq(RANGE, LPAREN, choice(integer, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.RANGE));
+    public rule range = seq(RANGE, LPAREN, choice(numerical_operation), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.RANGE));
 
     // indexer function (for map)
     public rule indexer = lazy(() -> seq(INDEXER, LPAREN, choice(this.indexable, any_value), RPAREN)).push($ -> new UnaryNode($.$0(), UnaryNode.INDEXER));
 
-    public rule indexable = choice(map, sort, range, indexer, ARGS, array);
+    public rule indexable = lazy(() -> choice(map, sort, range, indexer, ARGS, array, this.list_comprehension));
 
     // len function
     public rule len = seq(LEN, LPAREN, choice(indexable, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.LEN));
@@ -231,6 +231,11 @@ public final class NSParser extends Grammar {
     // Parsing strings into integers
     public rule parse_int = seq(INT, LPAREN, choice(string, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.PARSE_INT));
 
+    // List comprehension
+    public rule inlist_if = seq(IF, bool).push(ActionContext::$0);
+
+    public rule list_comprehension = lazy(() -> seq(LBRACKET, this.expression, FOR, identifier, IN, choice(indexable, any_value), inlist_if.or_push_null(), RBRACKET))
+                                                .push($ -> new ListComprehensionNode($.$0(), $.$1(), $.$2(), $.$3()));
 
     // Regrouping expressions
     public rule expression = choice(or_operation, NONE, indexable, string);

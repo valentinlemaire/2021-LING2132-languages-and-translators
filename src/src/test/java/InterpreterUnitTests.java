@@ -261,6 +261,7 @@ public class InterpreterUnitTests extends TestFixture {
 
     @Test
     public void testIO() {
+        // read
         successExpect("f = open(\"src/assets/read_tests.txt\", \"r\")\n" +
                 "read(f)", "Hello World");
         successExpect("f = open(\"src/assets/read_tests.txt\", \"r\")\n" +
@@ -273,10 +274,26 @@ public class InterpreterUnitTests extends TestFixture {
                 "end\n" +
                 "read(f)", "NS is a real thing");
         successExpect("f = open(\"src/assets/read_tests.txt\", \"r\")\n" +
+                "i = 1\n" +
                 "while read(f) != \"\":\n" +
-                "   println(\"hello\")\n" +
+                "   i = i+1\n" +
                 "end\n" +
                 "read(f)", "NS is a real thing");
+        successExpect("f = open(\"src/assets/read_tests.txt\", \"r\")\n" +
+                "i = 1\n" +
+                "while read(f) != \"\":\n" +
+                "   i = i+1\n" +
+                "end\n" +
+                "i", (long) 4);
+
+        // write
+        successExpect("f = open(\"src/assets/write_tests.txt\", \"w\")\n" +
+                "for i in range(5):\n" +
+                "   write(f, i)\n" +
+                "end\n" +
+                "close(f)\n" +
+                "f = open(\"src/assets/write_tests.txt\", \"r\")\n" +
+                "read(f)\n read(f)\n read(f)", "2");
     }
 
     @Test

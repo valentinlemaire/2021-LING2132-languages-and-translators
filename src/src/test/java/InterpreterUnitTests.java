@@ -151,6 +151,38 @@ public class InterpreterUnitTests extends TestFixture {
                       "[:f(1)]");
     }
 
+    @Test
+    public void testListComprehension() {
+        successExpect("a = [True, None, \"yo\", None, 4]\n" +
+                            "b = [x for x in a if x != None]\n" +
+                            "b", new PolymorphArray(true, "yo", (long) 4));
+
+        successExpect("a = [True, None, \"yo\", None, 4]\n" +
+                            "b = [[x] for x in a if x != None]\n" +
+                            "b", new PolymorphArray(new PolymorphArray(true), new PolymorphArray("yo"), new PolymorphArray((long) 4)));
+
+        successExpect("a = range(10)\n" +
+                            "b = [x+1 for x in a if x % 2 == 0]\n" +
+                            "b", new PolymorphArray((long) 1, (long) 3, (long) 5, (long) 7, (long) 9));
+
+        successExpect("def f(a):\n" +
+                            "  return a+1\n" +
+                            "end\n" +
+                            "a = range(10)\n" +
+                            "b = [f(x) for x in a if x < 3]\n" +
+                            "b", new PolymorphArray((long) 1, (long) 2, (long) 3));
+
+        failure(  "def f(a):\n" +
+                        "  return a+1\n" +
+                        "end\n" +
+                        "a = range(10)\n" +
+                        "b = [x+1 for x in a if f(x)]\n" +
+                        "b");
+
+
+
+    }
+
     // UNARY OPERATIONS
 
     @Test
@@ -265,7 +297,9 @@ public class InterpreterUnitTests extends TestFixture {
     @Test
     public void testLen() {
         successExpect("len([1, 2, 3])", (long) 3);
+
         successExpect("len({1: 2, 3: None})", (long) 2);
+
         failure("def f(x):\n" +
                 "  return None\n" +
                 "end\n" +

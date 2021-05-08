@@ -12,6 +12,8 @@ import scopes.RootScope;
 import scopes.Scope;
 import scopes.SyntheticDeclarationNode;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.LongStream;
 
 import static norswap.utils.Util.cast;
@@ -53,6 +55,7 @@ public final class Interpreter {
         // COLLECTIONS
         visitor.register(MapNode.class, this::map_);
         visitor.register(ArrayNode.class, this::array);
+        visitor.register(ListComprehensionNode.class, this::listComprehension);
 
         // OPERATIONS
         visitor.register(UnaryNode.class, this::unary);
@@ -192,6 +195,7 @@ public final class Interpreter {
         if (decl instanceof VarAssignmentNode
                 || decl instanceof ParameterNode
                 || decl instanceof ForNode
+                || decl instanceof ListComprehensionNode
                 || decl instanceof SyntheticDeclarationNode
                 && ((SyntheticDeclarationNode) decl).kind() == DeclarationKind.VARIABLE)
             return scope == rootScope
@@ -273,6 +277,37 @@ public final class Interpreter {
         }
 
         throw new Error("should not reach here");
+    }
+
+    private Object listComprehension(ListComprehensionNode n) {
+        Object list = get(n.iterable);
+        if (!(list instanceof PolymorphArray))
+            throw new PassthroughException(new RuntimeException("List comprehension must iterate over an array, not "+type(list)));
+        List<Object> result = new ArrayList<>();
+
+        ScopeStorage oldStorage = storage;
+        Scope scope = reactor.get(n, "scope");
+        storage = new ScopeStorage(scope, storage);
+
+        PolymorphArray array = (PolymorphArray) list;
+        for (Object elem : array) {
+            storage.set(scope, n.variable.value, elem);
+            if (n.condition != null) {
+                Object condition = get(n.condition);
+                if (!(condition instanceof Boolean))
+                    throw new PassthroughException(new RuntimeException("Filter condition in list comprehension must be a boolean not "+type(condition)));
+
+                if ((boolean) condition) {
+                    result.add(get(n.expression));
+                }
+            } else {
+                result.add(get(n.expression));
+            }
+        }
+
+        storage = oldStorage;
+        return new PolymorphArray(result.toArray());
+
     }
 
 

@@ -56,6 +56,7 @@ public final class SemanticAnalysis {
         walker.register(NoneNode.class,                 PRE_VISIT,  analysis::none);
         walker.register(IdentifierNode.class,           PRE_VISIT,  analysis::identifier);
         walker.register(ArrayNode.class,                PRE_VISIT,  analysis::array);
+        walker.register(ListComprehensionNode.class,    PRE_VISIT,  analysis::listComprehension);
         walker.register(MapNode.class,                  PRE_VISIT,  analysis::map);
         walker.register(FunctionCallNode.class,         PRE_VISIT,  analysis::functionCall);
         walker.register(UnaryNode.class,                PRE_VISIT,  analysis::unaryExpression);
@@ -116,7 +117,14 @@ public final class SemanticAnalysis {
 
             R.rule(node, "type")
                     .using(maybeCtx.declaration, "type")
-                    .by(Rule::copyFirst);
+                    .by(r -> {
+                        if (maybeCtx.declaration instanceof ForNode || maybeCtx.declaration instanceof ListComprehensionNode) {
+                            r.set(node, "type", Type.UNKNOWN_TYPE);
+                        } else {
+                            r.set(node, "type", r.get(0));
+                        }
+
+                    });
             return;
         }
 
@@ -171,9 +179,46 @@ public final class SemanticAnalysis {
         }
     }
 
+    private void listComprehension(ListComprehensionNode node) {
+        scope = new Scope(node, scope);
+        R.set(node, "scope", scope);
+
+        if (node.condition != null) {
+            R.rule(node.attr("type"))
+                    .using(node.iterable.attr("type"), node.condition.attr("type"))
+                    .by(r -> {
+                        Type iterableType = r.get(0);
+                        if (!(iterableType == Type.ARRAY || iterableType == Type.UNKNOWN_TYPE)) {
+                            r.errorFor("List comprehension must iterate through an array", node, node.attr("type"));
+                            return;
+                        }
+                        Type conditionType = r.get(1);
+                        if (!(conditionType == Type.BOOLEAN || conditionType == Type.UNKNOWN_TYPE)) {
+                            r.errorFor("List comprehension must have boolean as filter condition", node, node.attr("type"));
+                            return;
+                        }
+                        r.set(node, "type", Type.ARRAY);
+                    });
+        } else {
+            R.rule(node.attr("type"))
+                    .using(node.iterable.attr("type"))
+                    .by(r -> {
+                        Type iterableType = r.get(0);
+                        if (!(iterableType == Type.ARRAY || iterableType == Type.UNKNOWN_TYPE)) {
+                            r.errorFor("List comprehension must iterate through an array", node, node.attr("type"));
+                            return;
+                        }
+                        r.set(node, "type", Type.ARRAY);
+                    });
+        }
+        scope.declare(node.variable.value, node);
+
+
+    }
+
     private void map(MapNode node) {
         R.set(node, "type", Type.MAP);
-        /*if (node.elements != null) {
+        /* if (node.elements != null) {
             Attribute[] deps  = Stream.concat(
                     node.elements.stream().map(it -> it.left .attr("type")),
                     node.elements.stream().map(it -> it.right.attr("type")))
@@ -205,6 +250,8 @@ public final class SemanticAnalysis {
             R.set(node, "type", Type.MAP);
         }*/
     }
+
+
 
     private void functionCall(FunctionCallNode node) {
 
@@ -498,7 +545,6 @@ public final class SemanticAnalysis {
     public void for_(ForNode node) {
         scope = new Scope(node, scope);
         R.set(node, "scope", scope);
-        R.set(node, "type", Type.UNKNOWN_TYPE);
 
         R.rule()
                 .using(node.list.attr("type"))

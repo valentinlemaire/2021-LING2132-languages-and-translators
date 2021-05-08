@@ -97,6 +97,38 @@ public class SemanticUnitTests extends UraniumTestFixture {
     }
 
     @Test
+    public void testListComprehension() {
+
+        successInput("[x for x in [1, 2]]");
+
+        successInput("[f(x) for x in [1, 2]]");
+
+        successInput("[f(x) for x in range(12)]");
+
+        successInput("[x+5 for x in [None, 2] if x != None");
+
+        failureAt(new RootNode(new BlockNode(Arrays.asList(new ASTNode[]{new ListComprehensionNode(
+                new IdentifierNode("a"),
+                new IdentifierNode("x"),
+                new ArrayNode(Arrays.asList(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)})),
+                null)}))), new ListComprehensionNode(
+                new IdentifierNode("a"),
+                new IdentifierNode("x"),
+                new ArrayNode(Arrays.asList(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)})),
+                null));
+
+        failureAt(new RootNode(new BlockNode(Arrays.asList(new ASTNode[]{new ListComprehensionNode(
+                new FunctionCallNode(new IdentifierNode("f"), Arrays.asList(new ASTNode[]{new IdentifierNode("x")})),
+                new IdentifierNode("x"), new ArrayNode(Arrays.asList(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)})),
+                new IdentifierNode("x"))}))), new ListComprehensionNode(
+                new FunctionCallNode(new IdentifierNode("f"), Arrays.asList(new ASTNode[]{new IdentifierNode("x")})),
+                new IdentifierNode("x"), new ArrayNode(Arrays.asList(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)})),
+                new IdentifierNode("x")));
+
+
+    }
+
+    @Test
     public void testMap() {
         successInput("a = {1 : \"a\", 2 : \"b\", 3 : \"c\"}");
         successInput("x = 1\n"     +

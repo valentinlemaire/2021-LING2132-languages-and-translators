@@ -29,8 +29,6 @@ public class NS {
             ParseResult result = Autumn.parse(grammar.root, content, options);
             LineMap lineMap = new LineMapString(filepath, content);
 
-
-
             if (!result.fullMatch) {
                 System.out.println(result.toString(lineMap, false));
                 exit(1);

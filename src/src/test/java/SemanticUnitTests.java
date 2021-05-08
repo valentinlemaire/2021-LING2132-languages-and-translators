@@ -101,29 +101,28 @@ public class SemanticUnitTests extends UraniumTestFixture {
 
         successInput("[x for x in [1, 2]]");
 
-        successInput("[f(x) for x in [1, 2]]");
+        successInput("def f(a):\n" +
+                     "  return a\n" +
+                     "end\n" +
+                     "[f(x) for x in [1, 2]]");
 
-        successInput("[f(x) for x in range(12)]");
+        successInput("def f(a):\n" +
+                     "  return a\n" +
+                     "end\n" +
+                     "[f(x) for x in range(12)]");
 
-        successInput("[x+5 for x in [None, 2] if x != None");
+        successInput("[x+5 for x in [None, 2] if x != None]");
 
         failureAt(new RootNode(new BlockNode(Arrays.asList(new ASTNode[]{new ListComprehensionNode(
                 new IdentifierNode("a"),
                 new IdentifierNode("x"),
                 new ArrayNode(Arrays.asList(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)})),
-                null)}))), new ListComprehensionNode(
-                new IdentifierNode("a"),
-                new IdentifierNode("x"),
-                new ArrayNode(Arrays.asList(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)})),
-                null));
+                null)}))), new IdentifierNode("a"));
 
         failureAt(new RootNode(new BlockNode(Arrays.asList(new ASTNode[]{new ListComprehensionNode(
                 new FunctionCallNode(new IdentifierNode("f"), Arrays.asList(new ASTNode[]{new IdentifierNode("x")})),
                 new IdentifierNode("x"), new ArrayNode(Arrays.asList(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)})),
-                new IdentifierNode("x"))}))), new ListComprehensionNode(
-                new FunctionCallNode(new IdentifierNode("f"), Arrays.asList(new ASTNode[]{new IdentifierNode("x")})),
-                new IdentifierNode("x"), new ArrayNode(Arrays.asList(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)})),
-                new IdentifierNode("x")));
+                new IdentifierNode("x"))}))), new IdentifierNode("f"));
 
 
     }

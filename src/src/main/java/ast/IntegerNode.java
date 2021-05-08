@@ -1,8 +1,8 @@
 package ast;
 
 public class IntegerNode extends ASTNode {
-    public int value;
-    public IntegerNode(int v) {
+    public long value;
+    public IntegerNode(long v) {
         this.value = v;
     }
 

@@ -1,9 +1,10 @@
 def primes(n) :
     primes = [:n]
-    idx = 1
+    idx = 2
     pr = True
+    i = 0
 
-    for i in range(n) :
+    while i < n:
         for j in range(i) :
             if idx % primes[j] == 0 :
                 pr = False
@@ -11,6 +12,7 @@ def primes(n) :
         end
         if pr :
             primes[i] = idx
+            i = i + 1
         end
         idx = idx + 1
         pr = True
@@ -19,4 +21,4 @@ def primes(n) :
     return primes
 end
 
-print(primes(int(args[0])))
+println(primes(int(args[0])))

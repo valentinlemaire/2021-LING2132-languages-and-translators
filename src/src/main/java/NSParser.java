@@ -91,7 +91,7 @@ public final class NSParser extends Grammar {
     // Integers
     public rule integer_lit = seq(digit.at_least(1), not(identifier))
             .word()
-            .push($ -> new IntegerNode(Integer.parseInt($.str())));
+            .push($ -> new IntegerNode(Long.parseLong($.str())));
 
     public rule integer = lazy(() -> choice(integer_lit, this.len, this.parse_int));
 
@@ -218,7 +218,7 @@ public final class NSParser extends Grammar {
 
     // EXTRAS
     // range function
-    public rule range = seq(RANGE, LPAREN, choice(integer, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.RANGE));
+    public rule range = seq(RANGE, LPAREN, choice(numerical_operation), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.RANGE));
 
     // indexer function (for map)
     public rule indexer = lazy(() -> seq(INDEXER, LPAREN, choice(this.indexable, any_value), RPAREN)).push($ -> new UnaryNode($.$0(), UnaryNode.INDEXER));

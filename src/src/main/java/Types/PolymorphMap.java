@@ -10,7 +10,7 @@ import static interpreter.Interpreter.recConvertToString;
 import static norswap.utils.Util.cast;
 
 public class PolymorphMap {
-    private HashMap<Integer, Object> integerMap;
+    private HashMap<Long, Object> integerMap;
     private HashMap<String, Object> stringMap;
     private HashMap<Boolean, Object> boolMap;
 
@@ -21,8 +21,8 @@ public class PolymorphMap {
     }
 
     public void put(Object key, Object value) {
-        if (key instanceof Integer) {
-            integerMap.put((Integer) key, value);
+        if (key instanceof Long) {
+            integerMap.put((Long) key, value);
         } else if (key instanceof String) {
             stringMap.put((String) key, value);
         } else if (key instanceof Boolean) {
@@ -32,8 +32,8 @@ public class PolymorphMap {
 
     public Object get(Object key) {
         Object res = null;
-        if (key instanceof Integer) {
-            res = integerMap.get((Integer) key);
+        if (key instanceof Long) {
+            res = integerMap.get((Long) key);
         } else if (key instanceof String) {
             res = stringMap.get((String) key);
         } else if (key instanceof Boolean) {
@@ -49,7 +49,7 @@ public class PolymorphMap {
     public Object[] keys() {
         Object[] keys = new Object[integerMap.size()+stringMap.size()+boolMap.size()];
         int i = 0;
-        for (Integer key : integerMap.keySet()) {
+        for (Long key : integerMap.keySet()) {
             keys[i] = key;
             i += 1;
         }
@@ -67,7 +67,7 @@ public class PolymorphMap {
     public Object[][] entries() {
         Object[][] entries = new Object[integerMap.size()+stringMap.size()+boolMap.size()][2];
         int i = 0;
-        for (Map.Entry<Integer, Object> entry : integerMap.entrySet()) {
+        for (Map.Entry<Long, Object> entry : integerMap.entrySet()) {
             entries[i][0] = entry.getKey();
             entries[i][1] = entry.getValue();
             i += 1;

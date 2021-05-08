@@ -1,50 +1,22 @@
-import ast.ASTNode;
-import norswap.autumn.Autumn;
-import norswap.autumn.ParseOptions;
-import norswap.autumn.ParseResult;
-import norswap.autumn.positions.LineMap;
-import norswap.autumn.positions.LineMapString;
-import norswap.uranium.Reactor;
-import norswap.utils.visitors.Walker;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 public class FileTests {
     public static void main(String[] args) {
 
-        String[] files = new String[] {"fibonacci.ns", "fizzbuzz.ns", "sort.ns", "prime.ns", "uniq.ns"};
+        String[][] commands = new String[][]{
+                new String[]{"src/assets/fibonacci.ns", "50"},
+                new String[]{"src/assets/fizzbuzz.ns"},
+                new String[]{"src/assets/prime.ns", "50"},
+                new String[]{"src/assets/sort.ns", "34", "56", "341", "1", "-34", "12", "44", "95", "103", "11", "12"},
+                new String[]{"src/assets/uniq.ns", "hello", "bonjour", "ciao", "hello", "ciao", "coucou", "yo", "yo", "yo", "ciao"}
+        };
 
-        for (int i = 0; i < files.length; i++) {
-            try {
-                Path file = Path.of("src/assets/"+files[i]);
 
-                String content = Files.readString(file);
+        for (int i = 0; i < commands.length; i++) {
+            System.out.println("------------- TEST "+(i+1)+" -------------");
+            System.out.println("  "+commands[i][0].replace("src/assets/", ""));
+            System.out.println("----------------------------------");
 
-                NSParser grammar = new NSParser();
-                ParseOptions options = ParseOptions.builder().recordCallStack(true).get();
-                ParseResult result = Autumn.parse(grammar.root, content, options);
-                LineMap lineMap = new LineMapString(files[i], content);
-                System.out.println(result.toString(lineMap, false));
-
-                if (!result.fullMatch)
-                    continue;
-
-                ASTNode tree = (ASTNode) result.topValue();
-                Reactor reactor = new Reactor();
-                Walker<ASTNode> walker = SemanticAnalysis.createWalker(reactor);
-                walker.walk(tree);
-                reactor.run();
-
-                if (!reactor.errors().isEmpty()) {
-                    System.out.println(reactor.reportErrors(Object::toString));
-                    return;
-                }
-
-            } catch (IOException e) {
-                System.err.println("Error reading file.");
-            }
+            NS.main(commands[i]);
+            System.out.println("");
         }
     }
 }

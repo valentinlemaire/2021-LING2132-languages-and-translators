@@ -1,6 +1,6 @@
 def print_strings(map):
     for key in indexer(map):
-        println(map[key])
+        println(key)
     end
 end
 

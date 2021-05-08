@@ -517,7 +517,7 @@ public final class SemanticAnalysis {
         if (node.left instanceof IdentifierNode) {
             DeclarationContext maybeCtx = scope.lookup(((IdentifierNode) node.left).value);
 
-            if (maybeCtx == null) {
+            if (maybeCtx == null || maybeCtx.declaration instanceof FunctionDefinitionNode) {
                 scope.declare(((IdentifierNode) node.left).value, node);
                 R.set(node, "scope", scope);
 

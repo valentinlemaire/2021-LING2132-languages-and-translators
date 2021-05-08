@@ -234,6 +234,26 @@ public class InterpreterUnitTests extends TestFixture {
     }
 
     @Test
+    public void testIO() {
+        successExpect("f = open(\"src/assets/read_tests.txt\", \"r\")\n" +
+                "read(f)", "Hello World");
+        successExpect("f = open(\"src/assets/read_tests.txt\", \"r\")\n" +
+                "a = read(f)\n" +
+                "read(f)", "This is a remix");
+        successExpect("f = open(\"src/assets/read_tests.txt\", \"r\")\n" +
+                "a = read(f)" +
+                "while  a != \"\":\n" +
+                "   a = read(f)\n" +
+                "end\n" +
+                "read(f)", "NS is a real thing");
+        successExpect("f = open(\"src/assets/read_tests.txt\", \"r\")\n" +
+                "while read(f) != \"\":\n" +
+                "   println(\"hello\")\n" +
+                "end\n" +
+                "read(f)", "NS is a real thing");
+    }
+
+    @Test
     public void testNegation() {
         successExpect("a = 5\n" +
                             "b = -a\n" +

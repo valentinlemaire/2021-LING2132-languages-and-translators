@@ -7,6 +7,7 @@ public enum Type {
     ARRAY,
     MAP,
     NONE,
+    FILE,
     UNKNOWN_TYPE
 }
 

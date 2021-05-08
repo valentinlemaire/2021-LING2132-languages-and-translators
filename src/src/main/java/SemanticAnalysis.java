@@ -14,6 +14,7 @@ import norswap.uranium.Rule;
 import norswap.utils.visitors.ReflectiveFieldWalker;
 import norswap.utils.visitors.Walker;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -218,7 +219,12 @@ public final class SemanticAnalysis {
                     DeclarationContext maybeCtx = scope.lookup(node.functionName.value);
 
                     if (maybeCtx != null) {
-                        List<ParameterNode> params = ((FunctionDefinitionNode) maybeCtx.declaration).args;
+                        List<ParameterNode> params = null;
+                        if (maybeCtx.declaration instanceof FunctionDefinitionNode)
+                            params = ((FunctionDefinitionNode) maybeCtx.declaration).args;
+                        else if (maybeCtx.declaration instanceof SyntheticDeclarationNode) {
+                            params = ((SyntheticDeclarationNode) maybeCtx.declaration).getParameters();
+                        }
                         List<ASTNode> args = node.args;
 
                         if ((params == null && args != null) || (args == null && params != null) || params.size() != args.size())

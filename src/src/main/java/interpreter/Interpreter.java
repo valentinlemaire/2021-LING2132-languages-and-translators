@@ -1,9 +1,11 @@
 package interpreter;
 
+import Types.File;
 import Types.PolymorphArray;
 import Types.PolymorphMap;
 import ast.*;
 import norswap.uranium.Reactor;
+import norswap.utils.IO;
 import norswap.utils.exceptions.Exceptions;
 import norswap.utils.exceptions.NoStackException;
 import norswap.utils.visitors.ValuedVisitor;
@@ -12,6 +14,9 @@ import scopes.RootScope;
 import scopes.Scope;
 import scopes.SyntheticDeclarationNode;
 
+import javax.swing.tree.ExpandVetoException;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.stream.IntStream;
 
 import static norswap.utils.Util.cast;
@@ -127,6 +132,7 @@ public final class Interpreter {
         if (arg instanceof String) return "string";
         if (arg instanceof PolymorphArray) return "array";
         if (arg instanceof PolymorphMap) return "map";
+        if (arg instanceof File) return "file";
         return "unknown type";
     }
 
@@ -232,7 +238,7 @@ public final class Interpreter {
             }
         }
 
-        throw new Error("should not reach here");
+        throw new Error("Should not get here");
     }
 
     private int getIndex(ASTNode node) {
@@ -271,7 +277,7 @@ public final class Interpreter {
             return new PolymorphArray(IntStream.range(0, (int) arg).mapToObj((x) -> None.INSTANCE).toArray());
         }
 
-        throw new Error("should not reach here");
+        throw new Error("Should not get here");
     }
 
 
@@ -600,11 +606,19 @@ public final class Interpreter {
         if (decl == None.INSTANCE)
             throw new PassthroughException(new NullPointerException("calling a null function"));
 
+
+        //
+        if (decl instanceof SyntheticDeclarationNode) {
+            SyntheticDeclarationNode declNode = (SyntheticDeclarationNode) decl;
+            return builtin(declNode.name(), args);
+        }
+
         ScopeStorage oldStorage = storage;
         Scope scope = reactor.get(decl, "scope");
         storage = new ScopeStorage(scope, storage);
 
         FunctionDefinitionNode funDecl = (FunctionDefinitionNode) decl;
+
         coIterate(args, funDecl.args,
                 (arg, param) -> storage.set(scope, param.param.value, arg));
 
@@ -616,5 +630,44 @@ public final class Interpreter {
             storage = oldStorage;
         }
         return None.INSTANCE;
+    }
+
+    private Object builtin (String name, Object[] args) {
+        switch (name) {
+            case "open":
+                assert args.length == 2;
+                try {
+                    return new File((String) args[0], (String) args[1]);
+                } catch (IOException e) {
+                    throw new PassthroughException(e);
+                }
+            case "close":
+                assert args.length == 1;
+                File fClose = (File) args[0];
+                try {
+                    fClose.close();
+                } catch (IOException e) {
+                    throw new PassthroughException(e);
+                }
+                return None.INSTANCE;
+            case "read":
+                assert args.length == 1;
+                File fRead = (File) args[0];
+                try {
+                    return fRead.read();
+                } catch (IOException e) {
+                    throw new PassthroughException(e);
+                }
+            case "write":
+                assert args.length == 2;
+                File fWrite = (File) args[0];
+                try {
+                    fWrite.write(args[1]);
+                } catch (IOException e) {
+                    throw new PassthroughException(e);
+                }
+                return None.INSTANCE;
+        }
+        throw new Error("Should not get here");
     }
 }

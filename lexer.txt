@@ -8,6 +8,12 @@ else
 elsif
 print()
 println()
+
+open()
+read()
+write()
+close()
+
 int()
 range()
 return

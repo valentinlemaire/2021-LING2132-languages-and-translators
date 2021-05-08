@@ -1,9 +1,9 @@
 package scopes;
 
-import ast.BinaryNode;
-import ast.DeclarationNode;
-import ast.VarAssignmentNode;
+import ast.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -28,7 +28,7 @@ public final class SyntheticDeclarationNode implements DeclarationNode
         return name;
     }
 
-    public DeclarationKind kind() {
+    public DeclarationKind kind () {
         return kind;
     }
 
@@ -38,5 +38,26 @@ public final class SyntheticDeclarationNode implements DeclarationNode
 
     public String declaredThing () {
         return "built-in " + kind.name().toLowerCase(Locale.ROOT);
+    }
+
+    public List<ParameterNode> getParameters() {
+        ArrayList<ParameterNode> params = new ArrayList<>();
+        switch (name) {
+            case "open":
+                params.add(new ParameterNode(new IdentifierNode("filename")));
+                params.add(new ParameterNode(new IdentifierNode("mode")));
+                break;
+            case "close":
+            case "read":
+                params.add(new ParameterNode(new IdentifierNode("file")));
+                break;
+            case "write":
+                params.add(new ParameterNode(new IdentifierNode("file")));
+                params.add(new ParameterNode(new IdentifierNode("s")));
+                break;
+            default:
+                throw new Error("Should not get here");
+        }
+        return params;
     }
 }

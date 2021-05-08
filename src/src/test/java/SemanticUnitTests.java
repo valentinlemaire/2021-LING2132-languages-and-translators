@@ -226,6 +226,11 @@ public class SemanticUnitTests extends UraniumTestFixture {
     }
 
     @Test
+    public void testIO() {
+        successInput("f = open(\"src/assets/read_tests.txt\", \"r\")");
+    }
+
+    @Test
     public void testNegation() {
         successInput("a = -2");
         successInput("a = -4");

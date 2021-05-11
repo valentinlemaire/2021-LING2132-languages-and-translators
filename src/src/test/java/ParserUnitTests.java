@@ -213,8 +213,8 @@ public class ParserUnitTests extends AutumnTestFixture {
         this.rule = parser.for_;
         successExpect("for i in b: x = 1 end", new ForNode(new IdentifierNode("i"), new IdentifierNode("b"), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))))));
         successExpect("for i in [1, 2, 3]: x = 1 end", new ForNode(new IdentifierNode("i"), new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2), new IntegerNode(3))), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))))));
-        successExpect("for i in range(10): x = 1 end", new ForNode(new IdentifierNode("i"), new UnaryNode(new IntegerNode(10), UnaryNode.RANGE), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))))));
-        successExpect("for i in indexer([1, 2, 3]): x = 1 end", new ForNode(new IdentifierNode("i"), new UnaryNode(new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2), new IntegerNode(3))), UnaryNode.INDEXER), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))))));
+        successExpect("for i in range(10): x = 1 end", new ForNode(new IdentifierNode("i"), new FunctionCallNode(new IdentifierNode("range"), Arrays.asList(new ASTNode[]{new IntegerNode(10)})), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))))));
+        successExpect("for i in indexer([1, 2, 3]): x = 1 end", new ForNode(new IdentifierNode("i"), new FunctionCallNode(new IdentifierNode("indexer"), Arrays.asList(new ASTNode[]{new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2), new IntegerNode(3)))})), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1))))));
         failure("for i in \"hello\": x = 1 end");
         failure("for i in b: x = 1");
         failure("for i b : x = 1 end");
@@ -236,63 +236,54 @@ public class ParserUnitTests extends AutumnTestFixture {
 
     @Test
     public void testPrint() {
-        this.rule = parser.print;
+        this.rule = parser.function_call;
         /* print */
-        successExpect("print(\"hello world\")", new UnaryNode(new StringNode("hello world"), UnaryNode.PRINT));
-        successExpect("print(1)", new UnaryNode(new IntegerNode(1), UnaryNode.PRINT));
-        successExpect("print(3+4)", new UnaryNode(new BinaryNode(new IntegerNode(3), new IntegerNode(4), BinaryNode.ADD), UnaryNode.PRINT));
-        successExpect("print ( True )", new UnaryNode(new BoolNode(true), UnaryNode.PRINT));
-        successExpect("print()", new UnaryNode(null, UnaryNode.PRINT));
+        successExpect("print(\"hello world\")", new FunctionCallNode(new IdentifierNode("print"), Arrays.asList(new ASTNode[]{new StringNode("hello world")})));
+        successExpect("print(1)", new FunctionCallNode(new IdentifierNode("print"), Arrays.asList(new ASTNode[]{new IntegerNode(1)})));
+        successExpect("print(3+4)", new FunctionCallNode(new IdentifierNode("print"), Arrays.asList(new ASTNode[]{new BinaryNode(new IntegerNode(3), new IntegerNode(4), BinaryNode.ADD)})));
+        successExpect("print ( True )", new FunctionCallNode(new IdentifierNode("print"), Arrays.asList(new ASTNode[]{new BoolNode(true)})));
+        successExpect("print()", new FunctionCallNode(new IdentifierNode("print"), null));
         failure("print())");
         /* println */
-        successExpect("println(\"hello world\")", new UnaryNode(new StringNode("hello world"), UnaryNode.PRINTLN));
-        successExpect("println(1)", new UnaryNode(new IntegerNode(1), UnaryNode.PRINTLN));
-        successExpect("println(3+4)", new UnaryNode(new BinaryNode(new IntegerNode(3), new IntegerNode(4), BinaryNode.ADD), UnaryNode.PRINTLN));
-        successExpect("println ( True )", new UnaryNode(new BoolNode(true), UnaryNode.PRINTLN));
-        successExpect("println()", new UnaryNode(null, UnaryNode.PRINTLN));
+        successExpect("println(\"hello world\")", new FunctionCallNode(new IdentifierNode("println"), Arrays.asList(new ASTNode[]{new StringNode("hello world")})));
+        successExpect("println(1)", new FunctionCallNode(new IdentifierNode("println"), Arrays.asList(new ASTNode[]{new IntegerNode(1)})));
+        successExpect("println(3+4)", new FunctionCallNode(new IdentifierNode("println"), Arrays.asList(new ASTNode[]{new BinaryNode(new IntegerNode(3), new IntegerNode(4), BinaryNode.ADD)})));
+        successExpect("println ( True )", new FunctionCallNode(new IdentifierNode("println"), Arrays.asList(new ASTNode[]{new BoolNode(true)})));
+        successExpect("println()", new FunctionCallNode(new IdentifierNode("println"), null));
         failure("println(,)");
     }
 
     @Test
     public void testParseInt() {
-        this.rule = parser.parse_int;
-        successExpect("int(\"1\")", new UnaryNode(new StringNode("1"), UnaryNode.PARSE_INT));
-        successExpect("int (\t\"122\")", new UnaryNode(new StringNode("122"), UnaryNode.PARSE_INT));
-        successExpect("int(\"hello\")", new UnaryNode(new StringNode("hello"), UnaryNode.PARSE_INT));
-        successExpect("int(fun(3, \"hello\"))", new UnaryNode(new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello"))), UnaryNode.PARSE_INT));
-        failure("int(3)");
-        failure("inte ()");
-        failure("int()");
-        failure("int(True)");
+        this.rule = parser.function_call;
+        successExpect("int(\"1\")", new FunctionCallNode(new IdentifierNode("int"), Arrays.asList(new ASTNode[]{new StringNode("1")})));
+        successExpect("int (\t\"122\")", new FunctionCallNode(new IdentifierNode("int"), Arrays.asList(new ASTNode[]{new StringNode("122")})));
+        successExpect("int(\"hello\")", new FunctionCallNode(new IdentifierNode("int"), Arrays.asList(new ASTNode[]{new StringNode("hello")})));
+        successExpect("int(fun(3, \"hello\"))", new FunctionCallNode(new IdentifierNode("int"), Arrays.asList(new ASTNode[]{new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello")))})));
     }
 
     @Test
     public void sortTest() {
-        this.rule = parser.sort;
-        successExpect("sort([1, 2, \"ab\"])", new UnaryNode(new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2), new StringNode("ab"))), UnaryNode.SORT));
-        successExpect("sort  (\tfun(3, \"hello\"))", new UnaryNode(new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello"))), UnaryNode.SORT));
-        failure("sort()");
+        this.rule = parser.function_call;
+        successExpect("sort([1, 2, \"ab\"])", new FunctionCallNode(new IdentifierNode("sort"), Arrays.asList(new ASTNode[]{new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2), new StringNode("ab")))})));
+        successExpect("sort  (\tfun(3, \"hello\"))", new FunctionCallNode(new IdentifierNode("sort"), Arrays.asList(new ASTNode[]{new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello")))})));
         failure("sort");
-        failure("sort(3)");
     }
 
     @Test
     public void rangeTest() {
-        this.rule = parser.range;
-        successExpect("range(3)", new UnaryNode(new IntegerNode(3), UnaryNode.RANGE));
-        successExpect("range\t( fun(3, \"hello\"))", new UnaryNode(new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello"))), UnaryNode.RANGE));
-        failure("range()");
+        this.rule = parser.function_call;
+        successExpect("range(3)", new FunctionCallNode(new IdentifierNode("range"), Arrays.asList(new ASTNode[]{new IntegerNode(3)})));
+        successExpect("range\t( fun(3, \"hello\"))", new FunctionCallNode(new IdentifierNode("range"), Arrays.asList(new ASTNode[]{new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello")))})));
         failure("range");
-        failure("range([1, 2])");
     }
 
     @Test
     public void indexerTest() {
-        this.rule = parser.indexer;
-        successExpect("indexer({\"a\" : 2})", new UnaryNode(new MapNode(Arrays.asList(new BinaryNode(new StringNode("a"), new IntegerNode(2), BinaryNode.PAIR))), UnaryNode.INDEXER));
-        successExpect("indexer\t( fun(3, \"hello\"))", new UnaryNode(new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello"))), UnaryNode.INDEXER));
-        successExpect("indexer([1, 2])", new UnaryNode(new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2))), UnaryNode.INDEXER));
-        failure("indexer()");
+        this.rule = parser.function_call;
+        successExpect("indexer({\"a\" : 2})", new FunctionCallNode(new IdentifierNode("indexer"), Arrays.asList(new ASTNode[]{new MapNode(Arrays.asList(new BinaryNode(new StringNode("a"), new IntegerNode(2), BinaryNode.PAIR)))})));
+        successExpect("indexer\t( fun(3, \"hello\"))", new FunctionCallNode(new IdentifierNode("indexer"), Arrays.asList(new ASTNode[]{new FunctionCallNode(new IdentifierNode("fun"), Arrays.asList(new IntegerNode(3), new StringNode("hello")))})));
+        successExpect("indexer([1, 2])", new FunctionCallNode(new IdentifierNode("indexer"), Arrays.asList(new ASTNode[]{new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2)))})));
         failure("indexer");
     }
 

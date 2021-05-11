@@ -122,7 +122,7 @@ public class SemanticUnitTests extends UraniumTestFixture {
         failureAt(new RootNode(new BlockNode(Arrays.asList(new ASTNode[]{new ListComprehensionNode(
                 new FunctionCallNode(new IdentifierNode("f"), Arrays.asList(new ASTNode[]{new IdentifierNode("x")})),
                 new IdentifierNode("x"), new ArrayNode(Arrays.asList(new ASTNode[]{new IntegerNode(1), new IntegerNode(2)})),
-                new IdentifierNode("x"))}))), new IdentifierNode("f"));
+                new IdentifierNode("x"))}))), new FunctionCallNode(new IdentifierNode("f"), Arrays.asList(new ASTNode[]{new IdentifierNode("x")})), new IdentifierNode("f"));
 
 
     }
@@ -159,12 +159,12 @@ public class SemanticUnitTests extends UraniumTestFixture {
         successInput("b = 4\n" +
                 "a = range(b)");
         failureAt(new RootNode(new BlockNode(Arrays.asList(
-                new UnaryNode(new StringNode("Hello"), UnaryNode.RANGE)
+                new FunctionCallNode(new IdentifierNode("range"), Arrays.asList(new ASTNode[]{new StringNode("Hello")}))
                 ))),
-                new UnaryNode(new StringNode("Hello"), UnaryNode.RANGE)
+                new FunctionCallNode(new IdentifierNode("range"), Arrays.asList(new ASTNode[]{new StringNode("Hello")}))
         );
         success(new RootNode(new BlockNode(Arrays.asList(
-                new UnaryNode(new IntegerNode(3), UnaryNode.RANGE)
+                new FunctionCallNode(new IdentifierNode("range"), Arrays.asList(new ASTNode[]{new IntegerNode(3)}))
                 )))
         );
     }
@@ -180,15 +180,15 @@ public class SemanticUnitTests extends UraniumTestFixture {
         failureInput("a = \"PO-TA-TOES\"\n" +
                      "indexer(a)");
         failureAt(new RootNode(new BlockNode(Arrays.asList(
-                new UnaryNode(new StringNode("Hello"), UnaryNode.INDEXER)
+                new FunctionCallNode(new IdentifierNode("indexer"), Arrays.asList(new ASTNode[]{new StringNode("Hello")}))
                 ))),
-                new UnaryNode(new StringNode("Hello"), UnaryNode.INDEXER)
+                new FunctionCallNode(new IdentifierNode("indexer"), Arrays.asList(new ASTNode[]{new StringNode("Hello")}))
         );
         failureAt(new RootNode(new BlockNode(Arrays.asList(
                 new VarAssignmentNode(new IdentifierNode("a"), new StringNode("Test")),
-                new UnaryNode(new IdentifierNode("a"), UnaryNode.INDEXER)
+                new FunctionCallNode(new IdentifierNode("indexer"), Arrays.asList(new ASTNode[]{new IdentifierNode("a")}))
                 ))),
-                new UnaryNode(new IdentifierNode("a"), UnaryNode.INDEXER)
+                new FunctionCallNode(new IdentifierNode("indexer"), Arrays.asList(new ASTNode[]{new IdentifierNode("a")}))
         );
 
     }
@@ -203,17 +203,17 @@ public class SemanticUnitTests extends UraniumTestFixture {
         failureInput(   "b = False\n" +
                         "a = sort(b)");
         failureAt(new RootNode(new BlockNode(Arrays.asList(
-                new UnaryNode(new StringNode("Hello"), UnaryNode.SORT)
+                new FunctionCallNode(new IdentifierNode("sort"), Arrays.asList(new ASTNode[]{new StringNode("Hello")}))
                 ))),
-                new UnaryNode(new StringNode("Hello"), UnaryNode.SORT)
+                new FunctionCallNode(new IdentifierNode("sort"), Arrays.asList(new ASTNode[]{new StringNode("Hello")}))
         );
         success(new RootNode(new BlockNode(Arrays.asList(
-                new UnaryNode(new ArrayNode(Arrays.asList(
+                new FunctionCallNode(new IdentifierNode("sort"), Arrays.asList(new ASTNode[]{new ArrayNode(Arrays.asList(
                         new IntegerNode(4),
                         new IntegerNode(2),
                         new IntegerNode(7),
                         new IntegerNode(1)
-                )), UnaryNode.SORT)
+                ))}))
         ))));
     }
 
@@ -227,12 +227,12 @@ public class SemanticUnitTests extends UraniumTestFixture {
                      "a = a + 1");
         failureAt(
                 new RootNode(new BlockNode(Arrays.asList(
-                        new UnaryNode(new IntegerNode(3), UnaryNode.PARSE_INT)
+                        new FunctionCallNode(new IdentifierNode("int"), Arrays.asList(new ASTNode[]{new IntegerNode(3)}))
                 ))),
-                new UnaryNode(new IntegerNode(3), UnaryNode.PARSE_INT)
+                new FunctionCallNode(new IdentifierNode("int"), Arrays.asList(new ASTNode[]{new IntegerNode(3)}))
         );
         success(new RootNode(new BlockNode(Arrays.asList(
-                new UnaryNode(new StringNode("Hello World"), UnaryNode.PARSE_INT)
+                new FunctionCallNode(new IdentifierNode("int"), Arrays.asList(new ASTNode[]{new StringNode("Hello World")}))
         ))));
     }
 
@@ -277,7 +277,7 @@ public class SemanticUnitTests extends UraniumTestFixture {
         );
         success(new RootNode(new BlockNode(Arrays.asList(
                 new UnaryNode(
-                        new UnaryNode(new StringNode("Hello World"), UnaryNode.PARSE_INT),
+                        new FunctionCallNode(new IdentifierNode("int"), Arrays.asList(new ASTNode[]{new StringNode("Hello World")})),
                         UnaryNode.NEGATION)
         ))));
     }
@@ -342,18 +342,18 @@ public class SemanticUnitTests extends UraniumTestFixture {
 
         failureAt(new RootNode(new BlockNode(Arrays.asList(
                 new VarAssignmentNode(new IdentifierNode("a"), new BoolNode(false)),
-                new UnaryNode(new IdentifierNode("a"), UnaryNode.LEN)
-        ))), new UnaryNode(new IdentifierNode("a"), UnaryNode.LEN));
+                new FunctionCallNode(new IdentifierNode("len"), Arrays.asList(new ASTNode[]{new IdentifierNode("a")}))
+        ))), new FunctionCallNode(new IdentifierNode("len"), Arrays.asList(new ASTNode[]{new IdentifierNode("a")})));
         failureAt(new RootNode(new BlockNode(Arrays.asList(
-                new UnaryNode(new StringNode("Hello World"), UnaryNode.LEN)))),
-                new UnaryNode(new StringNode("Hello World"), UnaryNode.LEN)
+                new FunctionCallNode(new IdentifierNode("len"), Arrays.asList(new ASTNode[]{new StringNode("Hello World")}))))),
+                new FunctionCallNode(new IdentifierNode("len"), Arrays.asList(new ASTNode[]{new StringNode("Hello World")}))
         );
         success(new RootNode(new BlockNode(Arrays.asList(
-                new UnaryNode(new ArrayNode(Arrays.asList(
+                new FunctionCallNode(new IdentifierNode("len"), Arrays.asList(new ASTNode[]{new ArrayNode(Arrays.asList(
                         new IntegerNode(4),
                         new IntegerNode(3),
                         new IntegerNode(7)
-                )), UnaryNode.LEN)
+                ))}))
         ))));
     }
 

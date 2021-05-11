@@ -43,6 +43,24 @@ public final class SyntheticDeclarationNode implements DeclarationNode
     public List<ParameterNode> getParameters() {
         ArrayList<ParameterNode> params = new ArrayList<>();
         switch (name) {
+            case "range":
+                params.add(new ParameterNode(new IdentifierNode("limit")));
+            case "sort":
+                params.add(new ParameterNode(new IdentifierNode("array")));
+                break;
+            case "indexer":
+                params.add(new ParameterNode(new IdentifierNode("indexable")));
+                break;
+            case "int":
+                params.add(new ParameterNode(new IdentifierNode("s")));
+                break;
+            case "print":
+            case "println":
+                params.add(new ParameterNode(new IdentifierNode("obj")));
+                break;
+            case "len":
+                params.add(new ParameterNode(new IdentifierNode("sized")));
+                break;
             case "open":
                 params.add(new ParameterNode(new IdentifierNode("filename")));
                 params.add(new ParameterNode(new IdentifierNode("mode")));

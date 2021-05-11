@@ -150,20 +150,7 @@ public final class SemanticAnalysis {
     private void array(ArrayNode node) {
         if (node.elements != null) {
             R.set(node, "type", Type.ARRAY);
-            /*Attribute[] deps = node.elements.stream().map(it -> it.attr("type")).toArray(Attribute[]::new);
-            R.rule(node.attr("type"))
-                    .using(deps)
-                    .by(r -> {
-                        Type superType = Type.UNKNOWN_TYPE;
-                        for (int i = 0; i < deps.length; i++) {
-                            superType = getSuperType(superType, r.get(i));
-                            if (superType == null) {
-                                r.errorFor("All array elements must have the same type", node, node.attr("type"));
-                                return;
-                            }
-                        }
-                        r.set(node, "type", Type.ARRAY);
-                    });*/
+
         } else if (node.size != null) {
             R.rule(node.attr("type"))
                     .using(node.size.attr("type"))
@@ -216,38 +203,26 @@ public final class SemanticAnalysis {
     }
 
     private void map(MapNode node) {
-        R.set(node, "type", Type.MAP);
-        /* if (node.elements != null) {
-            Attribute[] deps  = Stream.concat(
-                    node.elements.stream().map(it -> it.left .attr("type")),
-                    node.elements.stream().map(it -> it.right.attr("type")))
-                .toArray(Attribute[]::new);
+        if (node.elements != null) {
+            Attribute[] deps  =
+                    node.elements.stream().map(it -> it.left .attr("type")).toArray(Attribute[]::new);
 
             R.rule(node.attr("type"))
                     .using(deps)
                     .by(r -> {
                         r.set(node, "type", Type.MAP);
 
-                        Type superType = Type.UNKNOWN_TYPE;
-                        for (int i = 0; i < deps.length/2; i++) {
-                            superType = getSuperType(superType, r.get(i));
-                            if (superType == null) {
-                                r.errorFor("All keys of a map must have the same type", node, node.attr("type"));
-                                return;
-                            }
-                        }
-                        superType = Type.UNKNOWN_TYPE;
-                        for (int i = deps.length/2; i < deps.length; i++) {
-                            superType = getSuperType(superType, r.get(i));
-                            if (superType == null) {
-                                r.errorFor("All values of a map must have the same type", node, node.attr("type"));
+                        for (int i = 0; i < deps.length; i++) {
+                            Type type = r.get(i);
+                            if (!(type == Type.BOOLEAN || type == Type.STRING || type == Type.INTEGER || type == Type.UNKNOWN_TYPE)) {
+                                r.errorFor("keys of a map must be strings, integers or booleans", node, node.attr("type"));
                                 return;
                             }
                         }
                     });
         } else {
             R.set(node, "type", Type.MAP);
-        }*/
+        }
     }
 
 
@@ -259,81 +234,106 @@ public final class SemanticAnalysis {
         R.rule(node, "type")
                 .using()
                 .by(r -> {
-                    r.set(0, Type.UNKNOWN_TYPE);
+
 
                     DeclarationContext maybeCtx = scope.lookup(node.functionName.value);
 
                     if (maybeCtx != null) {
                         List<ParameterNode> params = null;
-                        if (maybeCtx.declaration instanceof FunctionDefinitionNode)
+                        if (maybeCtx.declaration instanceof FunctionDefinitionNode) {
                             params = ((FunctionDefinitionNode) maybeCtx.declaration).args;
-                        else if (maybeCtx.declaration instanceof SyntheticDeclarationNode) {
+                            r.set(0, Type.UNKNOWN_TYPE);
+                        } else if (maybeCtx.declaration instanceof SyntheticDeclarationNode) {
                             params = ((SyntheticDeclarationNode) maybeCtx.declaration).getParameters();
+                            builtin(node, r);
                         }
                         List<ASTNode> args = node.args;
 
                         if ((params == null && args != null) || (args == null && params != null) || params.size() != args.size())
                             r.errorFor("Wrong number of arguments, expected "+params.size()+" but got "+args.size(),
                                     node);
+                    } else {
+                        r.errorFor("Calling function that was not declared", node, node.attr("type"));
                     }
 
                 });
     }
 
-    private void unaryExpression(final UnaryNode node) {
-        switch (node.code) {
-            case UnaryNode.RANGE:
-                R.rule(node.attr("type"))
-                        .using(node.child.attr("type"))
+    private void builtin(FunctionCallNode node, Rule rule) {
+        switch (node.functionName.value) {
+            case "range":
+                rule.set(node, "type", Type.ARRAY);
+                R.rule()
+                        .using(node.args.get(0).attr("type"))
                         .by(r -> {
-                           Type argType = r.get(0);
-                           if (argType == Type.INTEGER || argType == Type.UNKNOWN_TYPE) {
-                               r.set(node, "type", Type.ARRAY);
-                           } else {
-                               r.errorFor("Argument of range function must be an integer", node, node.attr("type"));
-                           }
-                        });
-                break;
-            case UnaryNode.INDEXER:
-                R.rule(node.attr("type"))
-                        .using(node.child.attr("type"))
-                        .by(r -> {
-                           Type nodeType = r.get(0);
-                           if (nodeType == Type.ARRAY || nodeType == Type.MAP || nodeType == Type.UNKNOWN_TYPE) {
-                               r.set(node, "type", Type.ARRAY);
-                           } else {
-                               r.errorFor("Argument of indexer function must be an array or a map", node, node.attr("type"));
-                           }
-                        });
-                break;
-            case UnaryNode.SORT:
-                R.rule(node.attr("type"))
-                    .using(node.child.attr("type"))
-                    .by(r -> {
-                        Type nodeType = r.get(0);
-                        if (nodeType == Type.ARRAY || nodeType == Type.UNKNOWN_TYPE) {
-                            r.set(node, "type", Type.ARRAY);
-                        } else {
-                            r.errorFor("Argument of sort function must be an array", node, node.attr("type"));
-                        }
-                    });
-                break;
-            case UnaryNode.PARSE_INT:
-                R.rule(node.attr("type"))
-                        .using(node.child.attr("type"))
-                        .by(r -> {
-                            Type childType = r.get(0);
-                            if (childType == Type.STRING || childType == Type.UNKNOWN_TYPE) {
-                                r.set(node, "type", Type.INTEGER);
-                            } else {
-                                r.errorFor("Argument of int function must be a string", node, node.attr("type"));
+                            Type argType = r.get(0);
+                            if (!(argType == Type.INTEGER || argType == Type.UNKNOWN_TYPE)) {
+                                r.errorFor("Argument of range function must be an integer", node);
                             }
                         });
                 break;
-            case UnaryNode.PRINT:
-            case UnaryNode.PRINTLN:
-                R.set(node, "type", Type.NONE);
+            case "indexer":
+                rule.set(node, "type", Type.ARRAY);
+                R.rule()
+                        .using(node.args.get(0).attr("type"))
+                        .by(r -> {
+                            Type nodeType = r.get(0);
+                            if (!(nodeType == Type.ARRAY || nodeType == Type.MAP || nodeType == Type.UNKNOWN_TYPE)) {
+                                r.errorFor("Argument of indexer function must be an array or a map", node);
+                            }
+                        });
                 break;
+            case "sort":
+                rule.set(node, "type", Type.ARRAY);
+                R.rule()
+                        .using(node.args.get(0).attr("type"))
+                        .by(r -> {
+                            Type nodeType = r.get(0);
+                            if (!(nodeType == Type.ARRAY || nodeType == Type.UNKNOWN_TYPE)) {
+                                r.errorFor("Argument of sort function must be an array", node);
+                            }
+                        });
+                break;
+            case "int":
+                rule.set(node, "type", Type.INTEGER);
+                R.rule()
+                        .using(node.args.get(0).attr("type"))
+                        .by(r -> {
+                            Type childType = r.get(0);
+                            if (!(childType == Type.STRING || childType == Type.UNKNOWN_TYPE)) {
+                                r.errorFor("Argument of int function must be a string", node);
+                            }
+                        });
+                break;
+            case "print":
+            case "println":
+                rule.set(node, "type", Type.NONE);
+                break;
+            case "len":
+                rule.set(node, "type", Type.INTEGER);
+                R.rule()
+                        .using(node.args.get(0).attr("type"))
+                        .by(r -> {
+                            Type childType = r.get(0);
+                            if (!(childType == Type.ARRAY || childType == Type.MAP || childType == Type.UNKNOWN_TYPE)) {
+                                r.errorFor("Argument of len function must be an array or a map", node);
+                            }
+                        });
+                break;
+            case "open":
+            case "write":
+            case "read":
+            case "close":
+                rule.set(node, "type", Type.UNKNOWN_TYPE);
+                break;
+            default:
+                break;
+
+        }
+    }
+
+    private void unaryExpression(final UnaryNode node) {
+        switch (node.code) {
             case UnaryNode.NEGATION:
                 R.rule(node.attr("type"))
                         .using(node.child.attr("type"))
@@ -368,18 +368,6 @@ public final class SemanticAnalysis {
                             }
                         });
 
-                break;
-            case UnaryNode.LEN:
-                R.rule(node.attr("type"))
-                        .using(node.child.attr("type"))
-                        .by(r -> {
-                            Type childType = r.get(0);
-                            if (childType == Type.ARRAY || childType == Type.MAP || childType == Type.UNKNOWN_TYPE) {
-                                r.set(node, "type", Type.INTEGER);
-                            } else {
-                                r.errorFor("Argument of len function must be an array or a map", node, node.attr("type"));
-                            }
-                        });
                 break;
             default:
                 break;
@@ -493,10 +481,22 @@ public final class SemanticAnalysis {
     }
 
     public void functionDeclaration(FunctionDefinitionNode node) {
-        scope.declare(node.name.value, node);
-        scope = new Scope(node, scope);
-        R.set(node, "scope", scope);
-        R.set(node, "type", Type.UNKNOWN_TYPE);
+        DeclarationContext declCtx = scope.lookup(node.name.value);
+        Scope s = new Scope(node, scope);
+        if (declCtx == null) {
+            scope.declare(node.name.value, node);
+            scope = s;
+        }
+
+        R.rule(node.attr("scope"), node.attr("type"))
+                .by(r -> {
+                    if (declCtx == null) {
+                        r.set(node, "scope", s);
+                        r.set(node, "type", Type.UNKNOWN_TYPE);
+                    } else {
+                        r.errorFor("Function name already declared in this scope", node, node.attr("scope"), node.attr("type"));
+                    }
+                });
     }
 
     public void if_(IfNode node) {

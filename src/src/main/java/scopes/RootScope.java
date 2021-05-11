@@ -35,6 +35,8 @@ public final class RootScope extends Scope
     public final SyntheticDeclarationNode sort    = decl("sort",    FUNCTION);
     public final SyntheticDeclarationNode range   = decl("range",   FUNCTION);
     public final SyntheticDeclarationNode indexer = decl("indexer", FUNCTION);
+    public final SyntheticDeclarationNode len     = decl("len",     FUNCTION);
+    public final SyntheticDeclarationNode int_    = decl("int",     FUNCTION);
     public final SyntheticDeclarationNode open    = decl("open",    FUNCTION);
     public final SyntheticDeclarationNode close   = decl("close",   FUNCTION);
     public final SyntheticDeclarationNode read    = decl("read",    FUNCTION);
@@ -55,6 +57,8 @@ public final class RootScope extends Scope
         reactor.set(sort,       "type",         Type.ARRAY);
         reactor.set(range,      "type",         Type.ARRAY);
         reactor.set(indexer,    "type",         Type.ARRAY);
+        reactor.set(len,        "type",         Type.INTEGER);
+        reactor.set(int_,       "type",         Type.INTEGER);
 
         reactor.set(open,       "type",         Type.FILE);
         reactor.set(close,      "type",         Type.NONE);

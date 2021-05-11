@@ -312,53 +312,7 @@ public final class Interpreter {
     private Object unary(UnaryNode n) {
         Object arg;
         switch (n.code) {
-            case UnaryNode.RANGE:
-                arg = getIndex(n.child);
-                return new PolymorphArray(LongStream.range(0, (int) arg).boxed().toArray());
 
-            case UnaryNode.INDEXER:
-                arg = get(n.child);
-                if (arg instanceof PolymorphArray) {
-                    PolymorphArray array = (PolymorphArray) arg;
-                    return new PolymorphArray(LongStream.range(0, array.size()).boxed().toArray());
-                } else if (arg instanceof PolymorphMap) {
-                    PolymorphMap map = (PolymorphMap) arg;
-                    return new PolymorphArray(map.keys());
-                } else {
-                    throw new PassthroughException(new RuntimeException("Argument of range function must be a map or an array, not " + type(arg)));
-                }
-            case UnaryNode.SORT:
-                arg = get(n.child);
-                if (arg instanceof PolymorphArray) {
-                    PolymorphArray original = (PolymorphArray) arg;
-                    PolymorphArray copy = original.clone();
-                    try {
-                        copy.sort();
-                        return copy;
-                    } catch (ClassCastException e) {
-                        throw new PassthroughException(e);
-                    }
-                } else {
-                    throw new PassthroughException(new RuntimeException("Argument of sort function must be an array, not " + type(arg)));
-                }
-            case UnaryNode.PARSE_INT:
-                arg = get(n.child);
-                if (arg instanceof String) {
-                    String s = (String) arg;
-                    return Long.parseLong(s);
-                } else {
-                    throw new PassthroughException(new RuntimeException("Argument of int function must be a string, not " + type(arg)));
-                }
-            case UnaryNode.PRINT:
-                arg = get(n.child);
-                String out = convertToString(arg);
-                System.out.print(out);
-                return None.INSTANCE;
-            case UnaryNode.PRINTLN:
-                arg = get(n.child);
-                String outln = convertToString(arg);
-                System.out.println(outln);
-                return None.INSTANCE;
             case UnaryNode.NEGATION:
                 arg = get(n.child);
                 if (arg instanceof Long) {
@@ -375,17 +329,6 @@ public final class Interpreter {
                 }
             case UnaryNode.RETURN:
                 throw new Return(n.child == null ? None.INSTANCE : get(n.child));
-            case UnaryNode.LEN:
-                arg = get(n.child);
-                if (arg instanceof PolymorphArray) {
-                    PolymorphArray array = (PolymorphArray) arg;
-                    return ((Integer) array.size()).longValue();
-                } else if (arg instanceof PolymorphMap) {
-                    PolymorphMap map = (PolymorphMap) arg;
-                    return ((Integer) map.size()).longValue();
-                } else {
-                    throw new PassthroughException(new RuntimeException("Argument of len function must be an array or a map, not" + type(arg)));
-                }
             default:
                 return null;
         }
@@ -660,6 +603,57 @@ public final class Interpreter {
 
     private Object builtin (String name, Object[] args) {
         switch (name) {
+            case "range":
+                return new PolymorphArray(LongStream.range(0, ((Long) args[0]).intValue()).boxed().toArray());
+
+            case "indexer":
+                if (args[0] instanceof PolymorphArray) {
+                    PolymorphArray array = (PolymorphArray) args[0];
+                    return new PolymorphArray(LongStream.range(0, array.size()).boxed().toArray());
+                } else if (args[0] instanceof PolymorphMap) {
+                    PolymorphMap map = (PolymorphMap) args[0];
+                    return new PolymorphArray(map.keys());
+                } else {
+                    throw new PassthroughException(new RuntimeException("Argument of range function must be a map or an array, not " + type(args[0])));
+                }
+            case "sort":
+                if (args[0] instanceof PolymorphArray) {
+                    PolymorphArray original = (PolymorphArray) args[0];
+                    PolymorphArray copy = original.clone();
+                    try {
+                        copy.sort();
+                        return copy;
+                    } catch (ClassCastException e) {
+                        throw new PassthroughException(e);
+                    }
+                } else {
+                    throw new PassthroughException(new RuntimeException("Argument of sort function must be an array, not " + type(args[0])));
+                }
+            case "int":
+                if (args[0] instanceof String) {
+                    String s = (String) args[0];
+                    return Long.parseLong(s);
+                } else {
+                    throw new PassthroughException(new RuntimeException("Argument of int function must be a string, not " + type(args[0])));
+                }
+            case "print":
+                String out = convertToString(args[0]);
+                System.out.print(out);
+                return None.INSTANCE;
+            case "println":
+                String outln = convertToString(args[0]);
+                System.out.println(outln);
+                return None.INSTANCE;
+            case "len":
+                if (args[0] instanceof PolymorphArray) {
+                    PolymorphArray array = (PolymorphArray) args[0];
+                    return ((Integer) array.size()).longValue();
+                } else if (args[0] instanceof PolymorphMap) {
+                    PolymorphMap map = (PolymorphMap) args[0];
+                    return ((Integer) map.size()).longValue();
+                } else {
+                    throw new PassthroughException(new RuntimeException("Argument of len function must be an array or a map, not" + type(args[0])));
+                }
             case "open":
                 assert args.length == 2;
                 try {

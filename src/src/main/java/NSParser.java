@@ -41,14 +41,14 @@ public final class NSParser extends Grammar {
     public rule ELSIF    = reserved("elsif");
     public rule DEF      = reserved("def");
     public rule END      = reserved("end");
-    public rule PRINT    = reserved("print");
+    /*public rule PRINT    = reserved("print");
     public rule PRINTLN  = reserved("println");
     public rule RANGE    = reserved("range");
     public rule INDEXER  = reserved("indexer");
-    public rule LEN      = reserved("len");
+    public rule LEN      = reserved("len");*/
     public rule RETURN   = reserved("return");
-    public rule SORT     = reserved("sort");
-    public rule INT      = reserved("int");
+   /* public rule SORT     = reserved("sort");
+    public rule INT      = reserved("int");*/
     public rule ARGS     = reserved("args").push($ -> new IdentifierNode($.str()));
     public rule NOT      = reserved("not");
     public rule AND      = reserved("and");
@@ -89,11 +89,11 @@ public final class NSParser extends Grammar {
     public rule string = seq(QUOTE, not_quote, QUOTE).word().push($ -> new StringNode($.$0()));
 
     // Integers
-    public rule integer_lit = seq(digit.at_least(1), not(identifier))
+    public rule integer = seq(digit.at_least(1), not(identifier))
             .word()
             .push($ -> new IntegerNode(Long.parseLong($.str())));
 
-    public rule integer = lazy(() -> choice(integer_lit, this.len, this.parse_int));
+    /*public rule integer =  lazy(() -> choice(integer_lit, this.len, this.parse_int));*/
 
     // Basic boolean values
     public rule boolean_values = choice(TRUE, FALSE);
@@ -203,7 +203,7 @@ public final class NSParser extends Grammar {
     public rule array = choice(full_array, empty_array);
 
     // sort function
-    public rule sort = seq(SORT, LPAREN, choice(array, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.SORT));
+    /*public rule sort = seq(SORT, LPAREN, choice(array, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.SORT));*/
 
 
     // Map declaration
@@ -216,20 +216,20 @@ public final class NSParser extends Grammar {
 
     public rule map = seq(LBRACE, map_elements_list.or_push_null(), RBRACE).push($ -> new MapNode($.$0()));
 
-    // EXTRAS
+    /*// EXTRAS
     // range function
     public rule range = seq(RANGE, LPAREN, choice(numerical_operation), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.RANGE));
 
     // indexer function (for map)
-    public rule indexer = lazy(() -> seq(INDEXER, LPAREN, choice(this.indexable, any_value), RPAREN)).push($ -> new UnaryNode($.$0(), UnaryNode.INDEXER));
+    public rule indexer = lazy(() -> seq(INDEXER, LPAREN, choice(this.indexable, any_value), RPAREN)).push($ -> new UnaryNode($.$0(), UnaryNode.INDEXER));*/
 
-    public rule indexable = lazy(() -> choice(map, sort, range, indexer, ARGS, array, this.list_comprehension));
+    public rule indexable = lazy(() -> choice(map, ARGS, array, this.list_comprehension));
 
     // len function
-    public rule len = seq(LEN, LPAREN, choice(indexable, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.LEN));
+    /*public rule len = seq(LEN, LPAREN, choice(indexable, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.LEN));*/
 
     // Parsing strings into integers
-    public rule parse_int = seq(INT, LPAREN, choice(string, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.PARSE_INT));
+    /*public rule parse_int = seq(INT, LPAREN, choice(string, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.PARSE_INT));*/
 
     // List comprehension
     public rule inlist_if = seq(IF, bool).push(ActionContext::$0);
@@ -287,14 +287,14 @@ public final class NSParser extends Grammar {
     // SPECIAL FUNCTIONS
 
     // print and println
-    public rule print_in_line = seq(PRINT, LPAREN, expression.or_push_null(), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.PRINT));
+    /*public rule print_in_line = seq(PRINT, LPAREN, expression.or_push_null(), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.PRINT));
 
     public rule print_new_line = seq(PRINTLN, LPAREN, expression.or_push_null(), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.PRINTLN));
 
-    public rule print = choice(print_in_line, print_new_line);
+    public rule print = choice(print_in_line, print_new_line);*/
 
     // Regrouping statements
-    public rule statement = choice(function_def, if_, while_, for_, print, return_, variable_assignment);
+    public rule statement = choice(function_def, if_, while_, for_, return_, variable_assignment);
 
     public rule statement_sequence = choice(statement, line_comment, expression).at_least(0).push($ -> new BlockNode($.$list()));
 

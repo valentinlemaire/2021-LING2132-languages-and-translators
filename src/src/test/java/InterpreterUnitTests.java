@@ -133,9 +133,11 @@ public class InterpreterUnitTests extends TestFixture {
 
         successExpect("{1: \"yo\", True: {1:\"yo\", \"test\":3, False:None}, \"this is getting complicated\": [1, None, False]}", map2);
 
-        failure("{None:2}");
+        failure("a = [None]\n" +
+                      "{a[0]:2}");
 
-        failure("{{3:5}:2}");
+        failure("a = {True: {3:5}}\n" +
+                      "{a[True]:2}");
 
     }
 

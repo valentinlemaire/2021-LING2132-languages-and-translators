@@ -143,15 +143,9 @@ public final class Interpreter {
         storage = rootStorage = new ScopeStorage(rootScope, null);
         storage.initRoot(rootScope, args);
 
-        try {
-            return get(n.block);
-        } catch (Return r) {
-            // TODO: claqué
-            return r.value;
-            // allow returning from the main script
-        } finally {
-            storage = null;
-        }
+        Object res = get(n.block);
+        storage = null;
+        return cast(res);
     }
 
     private Object block(BlockNode n) {

@@ -7,11 +7,18 @@ import java.util.Objects;
 public class VarAssignmentNode extends ASTNode implements DeclarationNode {
     public ASTNode left;
     public ASTNode right;
-    public int code;
+    public boolean final_;
 
     public VarAssignmentNode(ASTNode left, ASTNode right) {
         this.left = left;
         this.right = right;
+        this.final_ = false;
+    }
+
+    public VarAssignmentNode(ASTNode left, ASTNode right, boolean final_) {
+        this.left = left;
+        this.right = right;
+        this.final_ = final_;
     }
 
     @Override
@@ -19,6 +26,6 @@ public class VarAssignmentNode extends ASTNode implements DeclarationNode {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         VarAssignmentNode that = (VarAssignmentNode) o;
-        return code == that.code && Objects.equals(left, that.left) && Objects.equals(right, that.right);
+        return final_ == that.final_ && Objects.equals(left, that.left) && Objects.equals(right, that.right);
     }
 }

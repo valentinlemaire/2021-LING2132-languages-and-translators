@@ -1,5 +1,7 @@
 package ast;
 
+import java.util.Objects;
+
 public class IdentifierNode extends ASTNode {
     public String value;
 
@@ -9,8 +11,10 @@ public class IdentifierNode extends ASTNode {
 
     @Override
     public boolean equals(Object o) {
-        if (!o.getClass().equals(IdentifierNode.class)) return false;
-        IdentifierNode n = (IdentifierNode) o;
-        return value.equals(n.value);
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        IdentifierNode that = (IdentifierNode) o;
+        return Objects.equals(value, that.value);
     }
+
 }

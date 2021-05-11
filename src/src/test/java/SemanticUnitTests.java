@@ -546,12 +546,38 @@ public class SemanticUnitTests extends UraniumTestFixture {
     }
 
     @Test
+    public void testFinalVar() {
+        successInput("final a = True\n" +
+                "b = a");
+
+        successInput("final a = True\n" +
+                "final b = a");
+
+
+        // final a = 5
+        // a = 7
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                new VarAssignmentNode(new IdentifierNode("a"), new IntegerNode(5), true),
+                new VarAssignmentNode(new IdentifierNode("a"), new IntegerNode(7))))),
+                new VarAssignmentNode(new IdentifierNode("a"), new IntegerNode(7)));
+
+
+        // final a = [1, 2]
+        // a[1] = 7
+        failureAt(new RootNode(new BlockNode(Arrays.asList(
+                new VarAssignmentNode(new IdentifierNode("a"), new ArrayNode(Arrays.asList(new IntegerNode(1), new IntegerNode(2))), true),
+                new VarAssignmentNode(new BinaryNode(new IdentifierNode("a"), new IntegerNode(1), BinaryNode.IDX_ACCESS), new IntegerNode(7))))),
+                new VarAssignmentNode(new BinaryNode(new IdentifierNode("a"), new IntegerNode(1), BinaryNode.IDX_ACCESS), new IntegerNode(7)));
+    }
+
+    @Test
     public void testVarAssignment() {
         successInput("a = 1");
 
         failureAt(new RootNode(new BlockNode(Arrays.asList(
                 new VarAssignmentNode(new BinaryNode(new IdentifierNode("a"), new IntegerNode(2), BinaryNode.IDX_ACCESS), new IntegerNode(5))))),
                 new IdentifierNode("a"));
+
 
         successInput(   "a = True\n" +
                         "b = a");

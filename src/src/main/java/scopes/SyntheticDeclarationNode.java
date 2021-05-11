@@ -45,6 +45,7 @@ public final class SyntheticDeclarationNode implements DeclarationNode
         switch (name) {
             case "range":
                 params.add(new ParameterNode(new IdentifierNode("limit")));
+                break;
             case "sort":
                 params.add(new ParameterNode(new IdentifierNode("array")));
                 break;

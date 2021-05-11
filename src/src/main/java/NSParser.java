@@ -41,15 +41,8 @@ public final class NSParser extends Grammar {
     public rule ELSIF    = reserved("elsif");
     public rule DEF      = reserved("def");
     public rule END      = reserved("end");
-    /*public rule PRINT    = reserved("print");
-    public rule PRINTLN  = reserved("println");
-    public rule RANGE    = reserved("range");
-    public rule INDEXER  = reserved("indexer");
-    public rule LEN      = reserved("len");*/
     public rule RETURN   = reserved("return");
-   /* public rule SORT     = reserved("sort");
-    public rule INT      = reserved("int");*/
-    public rule ARGS     = reserved("args").push($ -> new IdentifierNode($.str()));
+    public rule FINAL    = reserved("final");
     public rule NOT      = reserved("not");
     public rule AND      = reserved("and");
     public rule OR       = reserved("or");
@@ -80,8 +73,9 @@ public final class NSParser extends Grammar {
     // VALUES
 
     // Variable names
-    public rule identifier = identifier(seq(id_start, id_part.at_least(0)))
-                                    .push($ -> new IdentifierNode($.str()));
+    public rule identifier_lit = identifier(seq(id_start, id_part.at_least(0))).push(ActionContext::str);
+
+    public rule identifier = identifier_lit.push($ -> new IdentifierNode($.$0()));
 
 
     // Strings
@@ -93,7 +87,6 @@ public final class NSParser extends Grammar {
             .word()
             .push($ -> new IntegerNode(Long.parseLong($.str())));
 
-    /*public rule integer =  lazy(() -> choice(integer_lit, this.len, this.parse_int));*/
 
     // Basic boolean values
     public rule boolean_values = choice(TRUE, FALSE);
@@ -107,16 +100,12 @@ public final class NSParser extends Grammar {
                                 .push($ -> new FunctionCallNode($.$0(), $.$1()));
 
     // Array and map access
-    public rule indexer_access = lazy(() -> seq(choice(function_call, identifier, ARGS), LBRACKET, this.expression ,RBRACKET))
+    public rule indexer_access = lazy(() -> seq(choice(function_call, identifier), LBRACKET, this.expression ,RBRACKET))
             .push($ -> new BinaryNode($.$0(), $.$1(), BinaryNode.IDX_ACCESS));
 
     public rule multiple_indexer_access = lazy(() -> left_expression()
             .left(indexer_access)
             .suffix(seq(LBRACKET, this.expression, RBRACKET), $ -> new BinaryNode($.$0(), $.$1(), BinaryNode.IDX_ACCESS)));
-
-
-    // Program arguments
-    // public rule program_args = lazy(() -> seq(ARGS, LBRACKET, this.expression, RBRACKET).push($ -> new UnaryNode($.$0(), UnaryNode.ARG_ACCESS)));
 
     public rule any_value = lazy(() -> choice(multiple_indexer_access, function_call, identifier, NONE));
 
@@ -202,9 +191,6 @@ public final class NSParser extends Grammar {
 
     public rule array = choice(full_array, empty_array);
 
-    // sort function
-    /*public rule sort = seq(SORT, LPAREN, choice(array, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.SORT));*/
-
 
     // Map declaration
     public rule map_element = lazy(() -> seq(this.expression, COLON, this.expression)).push($ -> new BinaryNode($.$0(), $.$1(), BinaryNode.PAIR));
@@ -216,20 +202,8 @@ public final class NSParser extends Grammar {
 
     public rule map = seq(LBRACE, map_elements_list.or_push_null(), RBRACE).push($ -> new MapNode($.$0()));
 
-    /*// EXTRAS
-    // range function
-    public rule range = seq(RANGE, LPAREN, choice(numerical_operation), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.RANGE));
+    public rule indexable = lazy(() -> choice(map, array, this.list_comprehension));
 
-    // indexer function (for map)
-    public rule indexer = lazy(() -> seq(INDEXER, LPAREN, choice(this.indexable, any_value), RPAREN)).push($ -> new UnaryNode($.$0(), UnaryNode.INDEXER));*/
-
-    public rule indexable = lazy(() -> choice(map, ARGS, array, this.list_comprehension));
-
-    // len function
-    /*public rule len = seq(LEN, LPAREN, choice(indexable, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.LEN));*/
-
-    // Parsing strings into integers
-    /*public rule parse_int = seq(INT, LPAREN, choice(string, any_value), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.PARSE_INT));*/
 
     // List comprehension
     public rule inlist_if = seq(IF, bool).push(ActionContext::$0);
@@ -242,13 +216,13 @@ public final class NSParser extends Grammar {
 
     // STATEMENTS
 
-    // Variable assignment
-    public rule variable_assignment = left_expression()
-                                        .left(choice(multiple_indexer_access, identifier))
-                                        .infix(EQUAL)
-                                        .right(expression)
-                                        .requireOperator()
+    public rule non_final_variable_assignment = seq(choice(multiple_indexer_access, identifier), EQUAL, expression)
                                         .push($ -> new VarAssignmentNode($.$0(), $.$1()));
+
+    public rule final_variable_assignment = seq(FINAL, identifier, EQUAL, expression)
+                                        .push($ -> new VarAssignmentNode($.$0(), $.$1(), true));
+
+    public rule variable_assignment = choice(final_variable_assignment, non_final_variable_assignment);
 
     // return statement
 
@@ -284,14 +258,6 @@ public final class NSParser extends Grammar {
     public rule function_def = lazy(() -> seq(DEF, identifier, LPAREN, param_list.or_push_null(), RPAREN, COLON, this.statement_sequence, END))
                         .push($ -> new FunctionDefinitionNode($.$0(), $.$1(), $.$2()));
 
-    // SPECIAL FUNCTIONS
-
-    // print and println
-    /*public rule print_in_line = seq(PRINT, LPAREN, expression.or_push_null(), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.PRINT));
-
-    public rule print_new_line = seq(PRINTLN, LPAREN, expression.or_push_null(), RPAREN).push($ -> new UnaryNode($.$0(), UnaryNode.PRINTLN));
-
-    public rule print = choice(print_in_line, print_new_line);*/
 
     // Regrouping statements
     public rule statement = choice(function_def, if_, while_, for_, return_, variable_assignment);

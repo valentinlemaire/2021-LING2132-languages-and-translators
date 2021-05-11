@@ -77,6 +77,7 @@ public class InterpreterUnitTests extends TestFixture {
 
     // PRIMITIVE LITERALS
 
+
     @Test
     public void testInteger() {
         successExpect("1", (long) 1);

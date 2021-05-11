@@ -184,6 +184,20 @@ public class ParserUnitTests extends AutumnTestFixture {
     }
 
     @Test
+    public void testFinalVariables() {
+        this.rule = parser.variable_assignment;
+        successExpect("final a = 1", new VarAssignmentNode(new IdentifierNode("a"), new IntegerNode(1), true));
+        failure("final a[3] = 1");
+        failure(    "final def f(x):\n" +
+                          "  return x\n" +
+                          "end");
+        failure("for final x in [1, 2]:\n" +
+                      "  a = x\n" +
+                      "end");
+
+    }
+
+    @Test
     public void testIf() {
         this.rule = parser.if_;
         successExpect("if True: x = 1 end", new IfNode(new BoolNode(true), new BlockNode(Arrays.asList(new VarAssignmentNode(new IdentifierNode("x"), new IntegerNode(1)))), Arrays.asList(new ElseNode[]{})));

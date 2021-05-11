@@ -564,8 +564,9 @@ public final class SemanticAnalysis {
 
 
     public void varAssignment(VarAssignmentNode node) {
+        DeclarationContext maybeCtx;
         if (node.left instanceof IdentifierNode) {
-            DeclarationContext maybeCtx = scope.lookup(((IdentifierNode) node.left).value);
+            maybeCtx = scope.lookup(((IdentifierNode) node.left).value);
 
             if (maybeCtx == null || maybeCtx.declaration instanceof FunctionDefinitionNode) {
                 scope.declare(((IdentifierNode) node.left).value, node);
@@ -576,37 +577,25 @@ public final class SemanticAnalysis {
                         .by(Rule::copyFirst);
                 return;
             }
+        } else if (node.left instanceof BinaryNode && ((BinaryNode) node.left).code == BinaryNode.IDX_ACCESS) {
+            maybeCtx = scope.lookup(((IdentifierNode) ((BinaryNode) node.left).left).value);
+        } else {
+            maybeCtx = null;
         }
 
         R.rule(node, "type")
-                .using(node.left.attr("type"), node.right.attr("type"))
+                .using(node.right.attr("type"))
                 .by(r -> {
-                    Type left  = r.get(0);
-                    Type right = r.get(1);
+                    if (maybeCtx != null && maybeCtx.declaration instanceof VarAssignmentNode) {
+                        if (((VarAssignmentNode) maybeCtx.declaration).final_) {
+                            r.errorFor("Cannot assign to final variable", node, node.attr("type"));
+                            return;
+                        }
+                    }
+                    Type right = r.get(0);
 
                     r.set(node, "type", right); // the type of the assignment is the right-side type
-
-
-                    if ((node.left instanceof BinaryNode && ((BinaryNode) node.left).code == BinaryNode.IDX_ACCESS)) { // variables can be assigned to a new type but not array elements
-                        if (!isAssignableTo(right, left))
-                            r.errorFor("Trying to assign a value to a non-compatible lvalue.", node);
-
-
-                    }
                 });
-    }
-
-    public boolean isAssignableTo(Type right, Type left) {
-        return right == Type.NONE || right == Type.UNKNOWN_TYPE || left == Type.UNKNOWN_TYPE || right == left;
-    }
-
-    public Type getSuperType(Type a, Type b) {
-        if (a == Type.UNKNOWN_TYPE || a == Type.NONE)
-            return (b == Type.NONE) ? Type.UNKNOWN_TYPE : b;
-        if (b == Type.UNKNOWN_TYPE || b == Type.NONE)
-            return a;
-        if (a == b) return a;
-        return null;
     }
 
 

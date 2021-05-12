@@ -77,6 +77,7 @@ public final class SemanticAnalysis {
         walker.register(BlockNode.class,                POST_VISIT, analysis::popScope);
         walker.register(FunctionDefinitionNode.class,   POST_VISIT, analysis::popScope);
         walker.register(ForNode.class,                  POST_VISIT, analysis::popScope);
+        walker.register(ListComprehensionNode.class,    POST_VISIT, analysis::popScope);
 
         // statements
         walker.register(VarAssignmentNode.class,        PRE_VISIT,  analysis::varAssignment);
@@ -198,8 +199,6 @@ public final class SemanticAnalysis {
                     });
         }
         scope.declare(node.variable.value, node);
-
-
     }
 
     private void map(MapNode node) {

@@ -15,6 +15,7 @@ idx = 0
 while line2 != None and idx < n_lines:
     lines_file_2[idx] = line2
     line2 = read(f2)
+    idx = idx + 1
 end
 
 close(f2)

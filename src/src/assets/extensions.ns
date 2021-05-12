@@ -1,0 +1,40 @@
+# number of lines to read
+final n_lines = int(args[0])
+
+# reading file 1 with list comprehension
+f1 = open("src/assets/IOfiles/ext_test_file_1.txt", "read")
+lines_file_1 = [read(f1) for i in range(n_lines)]
+close(f1)
+
+# reading file 2 with a while loop
+f2 = open("src/assets/IOfiles/ext_test_file_2.txt", "read")
+lines_file_2 = [:n_lines]
+line2 = read(f2)
+idx = 0
+
+while line2 != None and idx < n_lines:
+    lines_file_2[idx] = line2
+    line2 = read(f2)
+end
+
+close(f2)
+
+# transform arrays into map (keys are lines in file 1, values are lines in file 2)
+map = {}
+for i in range(n_lines):
+    map[lines_file_1[i]] = lines_file_2[i]
+end
+
+# writing to output file
+output = open("src/assets/IOfiles/test_correspondance.txt", "write")
+
+value = None
+
+for key in indexer(map):
+    value = map[key]
+    write(output, key)
+    write(output, value)
+    write(output, "")
+end
+
+close(output)

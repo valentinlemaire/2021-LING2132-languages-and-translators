@@ -1,0 +1,8 @@
+Orange
+Brown
+Yellow
+Orange
+Green or Red
+Brown or Red
+Brown
+No corresponding Fruit

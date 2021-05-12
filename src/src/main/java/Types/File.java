@@ -1,5 +1,6 @@
 package Types;
 
+import interpreter.None;
 import interpreter.PassthroughException;
 import norswap.utils.IO;
 
@@ -9,7 +10,7 @@ public class File {
     private BufferedReader reader;
     private BufferedWriter writer;
 
-    public File(String filename, String mode) throws FileNotFoundException, IOException {
+    public File(String filename, String mode) throws IOException {
         if (mode.equals("r") || mode.equals("read")) {
             reader = new BufferedReader(new FileReader(filename));
         } else if (mode.equals("w") || mode.equals("write")) {
@@ -26,9 +27,15 @@ public class File {
             writer.close();
     }
 
-    public String read() throws IOException {
-        if (reader != null)
-            return reader.readLine();
+    public Object read() throws IOException {
+        String line;
+        if (reader != null) {
+            line = reader.readLine();
+            if (line == null)
+                return None.INSTANCE;
+            else
+                return line;
+        }
         else
             throw new IOException("Calling read on file in write mode");
     }

@@ -264,7 +264,18 @@ public class InterpreterUnitTests extends TestFixture {
 
     @Test
     public void testIO() {
+        // failures
+        failure("f = open(\"src/assets/non_existant.txt\", \"r\")");
+        failure("f = open(\"src/assets/write_tests.txt\", \"w\")\n" +
+                "read(f)");
+        failure("f = open(\"src/assets/read_tests.txt\", \"r\")\n" +
+                "write(f, \"Hello World\")");
+        failure("a = 2\n" +
+                "read(a)");
+
         // read
+        successExpect("f = open(\"src/assets/IOfiles/1_line_file.txt\", \"r\")\n" +
+                "read(f)\n read(f)\n read(f)\n", None.INSTANCE);
         successExpect("f = open(\"src/assets/read_tests.txt\", \"r\")\n" +
                 "read(f)", "Hello World");
         successExpect("f = open(\"src/assets/read_tests.txt\", \"r\")\n" +
@@ -294,19 +305,9 @@ public class InterpreterUnitTests extends TestFixture {
                 "for i in range(5):\n" +
                 "   write(f, i)\n" +
                 "end\n" +
-                "close(f)\n" +
-                "f = open(\"src/assets/write_tests.txt\", \"r\")\n" +
-                "read(f)\n read(f)\n read(f)", "2");
-
-        // failures
-        failure("f = open(\"src/assets/non_existant.txt\", \"w\")");
-        failure("f = open(\"src/assets/write_tests.txt\", \"w\")\n" +
-                "read(f)");
-        failure("f = open(\"src/assets/read_tests.txt\", \"r\")\n" +
-                "write(f, \"Hello World\")");
-        failure("a = 2\n" +
-                "read(a)");
-
+                "close(f)\n", None.INSTANCE);
+//        successExpect("f = open(\"src/assets/write_tests.txt\", \"r\")\n" +
+//                "read(f)\n read(f)\n read(f)", "2");
     }
 
     @Test

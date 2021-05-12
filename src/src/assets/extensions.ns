@@ -22,7 +22,9 @@ close(f2)
 # transform arrays into map (keys are lines in file 1, values are lines in file 2)
 map = {}
 for i in range(n_lines):
-    map[lines_file_1[i]] = lines_file_2[i]
+    if lines_file_1[i] != None:
+        map[lines_file_1[i]] = lines_file_2[i]
+    end
 end
 
 # writing to output file
